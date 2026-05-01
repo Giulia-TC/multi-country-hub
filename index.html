@@ -246,7 +246,7 @@ tr:hover{background:#FAFBFC}
     <div class="page" id="page-pipeline">
       <div class="table-card">
         <div class="table-header">
-          <h3>Pipeline — All Inquiry & Proposal Trips</h3>
+          <h3>Pipeline — All Inquiry & Proposal Trips <span id="pipelineCountLabel" style="font-size:.75rem;font-weight:600;background:var(--navy);color:#fff;padding:2px 10px;border-radius:12px;margin-left:8px;vertical-align:middle"></span></h3>
           <div class="table-filters">
             <input type="text" id="pipelineSearch" placeholder="Search client or advisor..." oninput="renderPipeline()">
             <select id="pipelineFilterDMC" onchange="renderPipeline()"><option value="">All DMCs</option></select>
@@ -263,7 +263,7 @@ tr:hover{background:#FAFBFC}
     <div class="page" id="page-active">
       <div class="table-card">
         <div class="table-header">
-          <h3>Active Trips — Confirmed & Upcoming</h3>
+          <h3>Active Trips — Confirmed & Upcoming <span id="activeCountLabel" style="font-size:.75rem;font-weight:600;background:var(--green);color:#fff;padding:2px 10px;border-radius:12px;margin-left:8px;vertical-align:middle"></span></h3>
           <div class="table-filters">
             <input type="text" id="activeSearch" placeholder="Search..." oninput="renderActive()">
             <select id="activeFilterDMC" onchange="renderActive()"><option value="">All DMCs</option></select>
@@ -718,6 +718,7 @@ function renderPipeline() {
   if (filterStage) data = data.filter(r => r['Lead Stage'] === filterStage);
   if (filterRole) data = data.filter(r => r._role === filterRole);
 
+  document.getElementById('pipelineCountLabel').textContent = data.length;
   const table = document.getElementById('pipelineTable');
   table.querySelector('thead').innerHTML = '<tr><th>Role</th><th>Client / Trip</th><th>DMC</th><th>Lead Stage</th><th>Created</th><th>Start Date</th><th>End Date</th><th>Owner</th></tr>';
   table.querySelector('tbody').innerHTML = data.map(r => `<tr>
@@ -743,6 +744,7 @@ function renderActive() {
   if (search) data = data.filter(r => (r['Trip: Client Name'] + r['Trip: Owner Name']).toLowerCase().includes(search));
   if (filterDMC) data = data.filter(r => r._subsidiary === filterDMC);
 
+  document.getElementById('activeCountLabel').textContent = data.length;
   const table = document.getElementById('activeTable');
   table.querySelector('thead').innerHTML = '<tr><th>Role</th><th>Client / Trip</th><th>DMC</th><th>Sale Date</th><th>Start</th><th>End</th><th>Revenue</th><th>Owner</th></tr>';
   table.querySelector('tbody').innerHTML = data.map(r => `<tr>
