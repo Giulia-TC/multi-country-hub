@@ -156,6 +156,11 @@ tr:hover{background:#FAFBFC}
 .heatmap-table th{background:#F7FAFC;font-weight:600;color:var(--navy)}
 .heatmap-table td{transition:background .3s}
 
+/* ===== PILOT TOGGLE ===== */
+.pilot-toggle{display:flex;align-items:center;gap:6px;cursor:pointer;font-size:.8rem;font-weight:600;color:var(--navy);background:#EEF2FF;border:1px solid #C7D2FE;padding:5px 10px;border-radius:6px;transition:var(--transition);white-space:nowrap}
+.pilot-toggle input{accent-color:var(--navy);cursor:pointer}
+.pilot-toggle:has(input:checked){background:var(--navy);color:#fff;border-color:var(--navy)}
+
 /* ===== MISC ===== */
 .empty-state{text-align:center;padding:48px;color:var(--text-light)}
 .empty-state .icon{font-size:2.5rem;margin-bottom:12px}
@@ -247,6 +252,7 @@ tr:hover{background:#FAFBFC}
             <select id="pipelineFilterDMC" onchange="renderPipeline()"><option value="">All DMCs</option></select>
             <select id="pipelineFilterStage" onchange="renderPipeline()"><option value="">All Stages</option></select>
             <select id="pipelineFilterRole" onchange="renderPipeline()"><option value="">All Roles</option><option value="Parent">Parent</option><option value="Child">Child</option></select>
+            <label class="pilot-toggle"><input type="checkbox" id="pipelinePilotOnly" onchange="renderPipeline()"> <span>Pilot Only</span></label>
           </div>
         </div>
         <div class="table-wrap"><table id="pipelineTable"><thead></thead><tbody></tbody></table></div>
@@ -261,6 +267,7 @@ tr:hover{background:#FAFBFC}
           <div class="table-filters">
             <input type="text" id="activeSearch" placeholder="Search..." oninput="renderActive()">
             <select id="activeFilterDMC" onchange="renderActive()"><option value="">All DMCs</option></select>
+            <label class="pilot-toggle"><input type="checkbox" id="activePilotOnly" onchange="renderActive()"> <span>Pilot Only</span></label>
           </div>
         </div>
         <div class="table-wrap"><table id="activeTable"><thead></thead><tbody></tbody></table></div>
@@ -273,6 +280,7 @@ tr:hover{background:#FAFBFC}
         <h3 class="section-title">Trip Tracker — Grouped by Client</h3>
         <div class="table-filters">
           <input type="text" id="trackerSearch" placeholder="Search client..." oninput="renderTracker()">
+            <label class="pilot-toggle"><input type="checkbox" id="trackerPilotOnly" onchange="renderTracker()"> <span>Pilot Only</span></label>
         </div>
       </div>
       <div id="trackerKanban" class="kanban"></div>
@@ -688,14 +696,23 @@ function renderDashboard() {
   });
 }
 
+// ===== PILOT FILTER HELPER =====
+const PILOT_START = new Date(2026, 2, 9); // 9 March 2026
+function isPilot(r) {
+  const d = parseDate(r['Trip: Created Date']);
+  return d && !isNaN(d) && d >= PILOT_START;
+}
+
 // ===== PIPELINE =====
 function renderPipeline() {
   const search = (document.getElementById('pipelineSearch').value || '').toLowerCase();
   const filterDMC = document.getElementById('pipelineFilterDMC').value;
   const filterStage = document.getElementById('pipelineFilterStage').value;
   const filterRole = document.getElementById('pipelineFilterRole').value;
+  const pilotOnly = document.getElementById('pipelinePilotOnly').checked;
 
   let data = historyData.filter(r => r['Status'] === 'Inquiry');
+  if (pilotOnly) data = data.filter(isPilot);
   if (search) data = data.filter(r => (r['Trip: Client Name'] + r['Trip: Owner Name']).toLowerCase().includes(search));
   if (filterDMC) data = data.filter(r => r._subsidiary === filterDMC);
   if (filterStage) data = data.filter(r => r['Lead Stage'] === filterStage);
@@ -719,8 +736,10 @@ function renderPipeline() {
 function renderActive() {
   const search = (document.getElementById('activeSearch').value || '').toLowerCase();
   const filterDMC = document.getElementById('activeFilterDMC').value;
+  const pilotOnly = document.getElementById('activePilotOnly').checked;
 
   let data = historyData.filter(r => r['Status'] === 'Confirmed');
+  if (pilotOnly) data = data.filter(isPilot);
   if (search) data = data.filter(r => (r['Trip: Client Name'] + r['Trip: Owner Name']).toLowerCase().includes(search));
   if (filterDMC) data = data.filter(r => r._subsidiary === filterDMC);
 
@@ -741,10 +760,12 @@ function renderActive() {
 // ===== TRIP TRACKER =====
 function renderTracker() {
   const search = (document.getElementById('trackerSearch').value || '').toLowerCase();
+  const pilotOnly = document.getElementById('trackerPilotOnly').checked;
 
   // Group by client
   const groups = {};
-  historyData.forEach(r => {
+  const sourceData = pilotOnly ? historyData.filter(isPilot) : historyData;
+  sourceData.forEach(r => {
     const key = r._client.toLowerCase().replace(/[^a-z]/g, '').slice(0, 20);
     if (!key) return;
     if (!groups[key]) groups[key] = { client: r._client, trips: [] };
@@ -782,7 +803,7 @@ function renderTracker() {
   `).join('');
 
   // Table
-  let allTrips = historyData.filter(r => !search || r._client.toLowerCase().includes(search));
+  let allTrips = sourceData.filter(r => !search || r._client.toLowerCase().includes(search));
   allTrips.sort((a, b) => (a._client.toLowerCase()).localeCompare(b._client.toLowerCase()));
   const table = document.getElementById('trackerTable');
   table.querySelector('thead').innerHTML = '<tr><th>Client Group</th><th>Role</th><th>Trip Name</th><th>DMC</th><th>Status</th><th>Start</th><th>End</th><th>Revenue</th></tr>';
