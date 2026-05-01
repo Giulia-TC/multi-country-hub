@@ -195,6 +195,7 @@ tr:hover{background:#FAFBFC}
       <div class="nav-section-label">Trips</div>
       <a class="nav-item" data-page="pipeline"><span class="icon">&#9654;</span> Pipeline<span class="badge" id="pipelineCount">0</span></a>
       <a class="nav-item" data-page="active"><span class="icon">&#9200;</span> Active Trips<span class="badge" id="activeCount">0</span></a>
+      <a class="nav-item" data-page="delivered"><span class="icon">&#10003;</span> Delivered Trips<span class="badge" id="deliveredCount">0</span></a>
       <a class="nav-item" data-page="tracker"><span class="icon">&#9881;</span> Trip Tracker</a>
     </div>
     <div class="nav-section">
@@ -271,6 +272,21 @@ tr:hover{background:#FAFBFC}
           </div>
         </div>
         <div class="table-wrap"><table id="activeTable"><thead></thead><tbody></tbody></table></div>
+      </div>
+    </div>
+
+    <!-- ===== DELIVERED TRIPS ===== -->
+    <div class="page" id="page-delivered">
+      <div class="table-card">
+        <div class="table-header">
+          <h3>Delivered Trips — Completed & Past <span id="deliveredCountLabel" style="font-size:.75rem;font-weight:600;background:var(--purple);color:#fff;padding:2px 10px;border-radius:12px;margin-left:8px;vertical-align:middle"></span></h3>
+          <div class="table-filters">
+            <input type="text" id="deliveredSearch" placeholder="Search..." oninput="renderDelivered()">
+            <select id="deliveredFilterDMC" onchange="renderDelivered()"><option value="">All DMCs</option></select>
+            <label class="pilot-toggle"><input type="checkbox" id="deliveredPilotOnly" onchange="renderDelivered()"> <span>Pilot Only</span></label>
+          </div>
+        </div>
+        <div class="table-wrap"><table id="deliveredTable"><thead></thead><tbody></tbody></table></div>
       </div>
     </div>
 
@@ -564,7 +580,7 @@ document.querySelectorAll('.nav-item').forEach(item => {
     const page = item.dataset.page;
     document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
     document.getElementById('page-' + page).classList.add('active');
-    const titles = {dashboard:'Dashboard',pipeline:'Pipeline',active:'Active Trips',tracker:'Trip Tracker',dmc:'DMC Performance',financial:'Financial Overview',routes:'Countries & Routes',sla:'SLA Monitor',compliance:'SF Compliance',framework:'Framework',settings:'Settings'};
+    const titles = {dashboard:'Dashboard',pipeline:'Pipeline',active:'Active Trips',delivered:'Delivered Trips',tracker:'Trip Tracker',dmc:'DMC Performance',financial:'Financial Overview',routes:'Countries & Routes',sla:'SLA Monitor',compliance:'SF Compliance',framework:'Framework',settings:'Settings'};
     document.getElementById('pageTitle').textContent = titles[page] || page;
     document.querySelector('.sidebar').classList.remove('open');
   });
@@ -575,6 +591,7 @@ function renderAll() {
   renderDashboard();
   renderPipeline();
   renderActive();
+  renderDelivered();
   renderTracker();
   renderDMC();
   renderFinancial();
@@ -589,15 +606,18 @@ function renderAll() {
 function updateBadges() {
   const pipeline = historyData.filter(r => r['Status'] === 'Inquiry');
   document.getElementById('pipelineCount').textContent = pipeline.length;
+  const today = new Date(); today.setHours(0,0,0,0);
   const active = historyData.filter(r => r['Status'] === 'Confirmed');
   document.getElementById('activeCount').textContent = active.length;
+  const delivered = historyData.filter(r => { if (r['Status'] !== 'Confirmed') return false; const d = parseDate(r['Trip End Date']); return d && !isNaN(d) && d < today; });
+  document.getElementById('deliveredCount').textContent = delivered.length;
 }
 
 // ===== POPULATE FILTERS =====
 function populateFilters() {
   const dmcs = [...new Set(historyData.map(r => r._subsidiary))].filter(Boolean).sort();
   const stages = [...new Set(historyData.map(r => r['Lead Stage']).filter(Boolean))].sort();
-  ['pipelineFilterDMC','activeFilterDMC'].forEach(id => {
+  ['pipelineFilterDMC','activeFilterDMC','deliveredFilterDMC'].forEach(id => {
     const sel = document.getElementById(id);
     const val = sel.value;
     sel.innerHTML = '<option value="">All DMCs</option>' + dmcs.map(d => `<option value="${d}">${d}</option>`).join('');
@@ -757,6 +777,38 @@ function renderActive() {
     <td style="font-weight:600">${r._salePrice ? fmtCurrency(r._salePrice) : '--'}</td>
     <td>${r['Trip: Owner Name']}</td>
   </tr>`).join('') || '<tr><td colspan="8" class="empty-state">No confirmed trips</td></tr>';
+}
+
+// ===== DELIVERED TRIPS =====
+function renderDelivered() {
+  const search = (document.getElementById('deliveredSearch').value || '').toLowerCase();
+  const filterDMC = document.getElementById('deliveredFilterDMC').value;
+  const pilotOnly = document.getElementById('deliveredPilotOnly').checked;
+  const today = new Date(); today.setHours(0,0,0,0);
+
+  let data = historyData.filter(r => {
+    if (r['Status'] !== 'Confirmed') return false;
+    const d = parseDate(r['Trip End Date']);
+    return d && !isNaN(d) && d < today;
+  });
+  if (pilotOnly) data = data.filter(isPilot);
+  if (search) data = data.filter(r => (r['Trip: Client Name'] + r['Trip: Owner Name']).toLowerCase().includes(search));
+  if (filterDMC) data = data.filter(r => r._subsidiary === filterDMC);
+  data.sort((a, b) => (parseDate(b['Trip End Date']) || 0) - (parseDate(a['Trip End Date']) || 0));
+
+  document.getElementById('deliveredCountLabel').textContent = data.length;
+  const table = document.getElementById('deliveredTable');
+  table.querySelector('thead').innerHTML = '<tr><th>Role</th><th>Client / Trip</th><th>DMC</th><th>Sale Date</th><th>Start</th><th>End</th><th>Revenue</th><th>Owner</th></tr>';
+  table.querySelector('tbody').innerHTML = data.map(r => `<tr>
+    <td>${roleBadge(r._role)}</td>
+    <td>${r['Trip: Client Name']}</td>
+    <td>${r._subsidiary}</td>
+    <td>${fmtDate(r['Sale Date'])}</td>
+    <td>${fmtDate(r['Trip Start Date'])}</td>
+    <td>${fmtDate(r['Trip End Date'])}</td>
+    <td style="font-weight:600">${r._salePrice ? fmtCurrency(r._salePrice) : '--'}</td>
+    <td>${r['Trip: Owner Name']}</td>
+  </tr>`).join('') || '<tr><td colspan="8" class="empty-state">No delivered trips found</td></tr>';
 }
 
 // ===== TRIP TRACKER =====
