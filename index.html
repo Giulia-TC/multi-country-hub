@@ -855,59 +855,27 @@ function renderDelivered() {
 
 // ===== COMBO GROUPS =====
 function buildComboGroups(sourceData) {
-  // Words to ignore when matching — too common to be meaningful
-  const STOP = new Set([
-    'family','trip','couple','clients','client','lead','child','parent',
-    'combo','the','and','for','with','amp','from','italy','spain','france',
-    'morocco','turkey','greece','portugal','london','paris','rome',
-    'grace','megan','harvey','mark','abeytia','kendall','white'
-  ]);
-
-  function nameTokens(tripName) {
-    return tripName
-      .replace(/^CT\s*(Parent|Child|CHILD|\(Parent\)|\(Child\))\s*[-–()\s:]*/i, '')
-      .replace(/[-–]\s*\d+P\d+N.*/i, '')
-      .replace(/[-–]\s*(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\w*\s*\d{4}.*/i, '')
-      .replace(/[-–]\s*(Spain|France|Italy|UK|Greece|Morocco|Turkey|Portugal)\b.*/i, '')
-      .replace(/[^a-zA-Z\s]/g, ' ')
-      .split(/\s+/)
-      .map(w => w.toLowerCase())
-      .filter(w => w.length >= 5 && !STOP.has(w));
+  // Normalise a name into a stable key for matching
+  function normKey(name) {
+    return name
+      .replace(/^CT\s*(Parent|Child|CHILD|\(Parent\)|\(Child\))\s*[-–:]?\s*/i, '')
+      .replace(/\s*[-–]\s*(Spain|France|Italy|UK|Greece|Morocco|Turkey|Portugal)[^,]*/i, '')
+      .replace(/\s*[-–]\s*\d+P\d+N.*/i, '')
+      .replace(/\s*[-–]\s*(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\w*\s*\d{4}.*/i, '')
+      .replace(/\s*x\d+$/i, '')
+      .replace(/\s+/g, ' ')
+      .trim()
+      .toLowerCase();
   }
-
-  // Union-Find
-  const uf = {};
-  function find(x) { if (uf[x] == null) uf[x] = x; return uf[x] === x ? x : (uf[x] = find(uf[x])); }
-  function union(x, y) { uf[find(x)] = find(y); }
-
-  // Build word → row-index index, then union any rows sharing a word
-  const wordIdx = {};
-  sourceData.forEach((r, i) => {
-    nameTokens(r['Trip: Client Name'] || '').forEach(w => {
-      if (!wordIdx[w]) wordIdx[w] = [];
-      wordIdx[w].push(i);
-    });
-  });
-  Object.values(wordIdx).forEach(idxs => {
-    for (let i = 1; i < idxs.length; i++) union(idxs[0], idxs[i]);
-  });
-
-  // Collect groups
   const groups = {};
-  sourceData.forEach((r, i) => {
-    const root = find(i);
-    if (!groups[root]) groups[root] = { parents: [], children: [] };
-    if (r._role === 'Parent') groups[root].parents.push(r);
-    else groups[root].children.push(r);
+  sourceData.forEach(r => {
+    const key = normKey(r['Trip: Client Name'] || '');
+    if (!key) return;
+    if (!groups[key]) groups[key] = { key, displayName: r._client, parents: [], children: [] };
+    if (r._role === 'Parent') groups[key].parents.push(r);
+    else groups[key].children.push(r);
   });
-
-  return Object.values(groups)
-    .filter(g => g.parents.length || g.children.length)
-    .map(g => {
-      const ref = g.parents[0] || g.children[0];
-      g.displayName = ref ? ref._client : 'Unknown';
-      return g;
-    });
+  return Object.values(groups).filter(g => g.parents.length || g.children.length);
 }
 
 function comboStatusBadge(group) {
