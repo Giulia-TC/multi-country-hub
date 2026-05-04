@@ -187,6 +187,8 @@ tr:hover{background:#FAFBFC}
 .combo-unassigned-hint{font-size:.72rem;color:var(--text-light)}
 .combo-new-group-zone{background:transparent;border:2px dashed #CBD5E0;border-radius:var(--radius);display:flex;align-items:center;justify-content:center;min-height:100px;cursor:pointer;transition:all .2s;color:#A0AEC0;font-size:.82rem;font-weight:600}
 .combo-new-group-zone.drag-over{border-color:var(--green);background:rgba(72,187,120,.06);color:var(--green)}
+body.combo-dragging .combo-card{border-color:rgba(197,165,114,.5)}
+body.combo-dragging .combo-drop-zone{display:block !important}
 .combo-reset-btn{background:none;border:1px solid #E2E8F0;color:var(--text-light);padding:5px 12px;border-radius:6px;font-size:.75rem;cursor:pointer;transition:var(--transition)}
 .combo-reset-btn:hover{border-color:var(--red);color:var(--red);background:#FFF5F5}
 @media(max-width:768px){.combo-grid{grid-template-columns:1fr}}
@@ -1035,44 +1037,66 @@ function initComboDnD() {
   const container = document.getElementById('comboGrid');
   if (!container) return;
 
-  // Drag start on trip rows
-  container.querySelectorAll('.combo-trip-draggable').forEach(el => {
-    el.addEventListener('dragstart', e => {
-      _dragTripKey = el.dataset.tripKey;
-      setTimeout(() => el.classList.add('dragging'), 0);
-      e.dataTransfer.effectAllowed = 'move';
-      e.dataTransfer.setData('text/plain', _dragTripKey);
-      // Show all drop zones
-      container.querySelectorAll('.combo-drop-zone').forEach(z => z.style.display = 'block');
-    });
-    el.addEventListener('dragend', () => {
-      el.classList.remove('dragging');
-      container.querySelectorAll('.drag-over').forEach(d => d.classList.remove('drag-over'));
-      container.querySelectorAll('.combo-drop-zone').forEach(z => z.style.display = '');
-    });
-  });
+  // Counter map: tracks nested dragenter depth per element to avoid
+  // false dragleave events when moving between child elements
+  const enterCount = new Map();
 
-  // Drop targets
-  const dropTargets = container.querySelectorAll('.combo-card, .combo-drop-zone, .combo-unassigned, .combo-new-group-zone');
-  dropTargets.forEach(el => {
-    el.addEventListener('dragover', e => { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; el.classList.add('drag-over'); });
-    el.addEventListener('dragleave', e => { if (!el.contains(e.relatedTarget)) el.classList.remove('drag-over'); });
+  function addTarget(el) {
+    enterCount.set(el, 0);
+    el.addEventListener('dragenter', e => {
+      e.preventDefault();
+      enterCount.set(el, (enterCount.get(el) || 0) + 1);
+      el.classList.add('drag-over');
+    });
+    el.addEventListener('dragleave', () => {
+      const c = (enterCount.get(el) || 1) - 1;
+      enterCount.set(el, c);
+      if (c <= 0) { enterCount.set(el, 0); el.classList.remove('drag-over'); }
+    });
+    el.addEventListener('dragover', e => { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; });
     el.addEventListener('drop', e => {
       e.preventDefault(); e.stopPropagation();
-      el.classList.remove('drag-over');
-      const tKey = e.dataTransfer.getData('text/plain') || _dragTripKey;
+      enterCount.set(el, 0); el.classList.remove('drag-over');
+      const tKey = _dragTripKey || e.dataTransfer.getData('text/plain');
       if (!tKey) return;
-      let targetId = el.dataset.groupId;
-      if (targetId === '__new__') {
-        targetId = 'custom_' + Date.now();
+      // Resolve group ID: from the element or its nearest card ancestor
+      let gid = el.dataset.groupId || el.closest('[data-group-id]')?.dataset.groupId;
+      if (!gid) return;
+      if (gid === '__new__') {
+        gid = 'custom_' + Date.now();
         const trip = historyData.find(r => r['Trip: Client Name'] === tKey);
-        comboCustomGroupNames[targetId] = trip ? trip._client : 'New Group';
+        comboCustomGroupNames[gid] = trip ? trip._client : 'New Group';
       }
-      comboManualMap[tKey] = targetId;
+      comboManualMap[tKey] = gid;
       saveComboState();
       renderCombos();
     });
+  }
+
+  // Draggable trip rows
+  container.querySelectorAll('.combo-trip-draggable').forEach(el => {
+    el.addEventListener('dragstart', e => {
+      _dragTripKey = el.dataset.tripKey;
+      e.dataTransfer.effectAllowed = 'move';
+      e.dataTransfer.setData('text/plain', _dragTripKey);
+      setTimeout(() => el.classList.add('dragging'), 0);
+      document.body.classList.add('combo-dragging');
+    });
+    el.addEventListener('dragend', () => {
+      el.classList.remove('dragging');
+      document.body.classList.remove('combo-dragging');
+      container.querySelectorAll('.drag-over').forEach(d => d.classList.remove('drag-over'));
+      enterCount.clear();
+    });
   });
+
+  // Register drop targets — cards (whole card), unassigned pool, new-group zone
+  // The drop zone div inside each card is NOT registered separately — the card handles it
+  container.querySelectorAll('.combo-card').forEach(addTarget);
+  const unassigned = container.querySelector('.combo-unassigned');
+  const newZone = container.querySelector('.combo-new-group-zone');
+  if (unassigned) addTarget(unassigned);
+  if (newZone) addTarget(newZone);
 
   // Remove (×) buttons
   container.querySelectorAll('.combo-trip-remove').forEach(btn => {
