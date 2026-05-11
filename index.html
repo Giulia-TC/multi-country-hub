@@ -1308,7 +1308,7 @@ function renderFinancial() {
   destroyChart('chartFinDmc');
   chartInstances['chartFinDmc'] = new Chart(document.getElementById('chartFinDmc'), {
     type: 'bar',
-    data: { labels: sortedDmc.map(d => d[0]), datasets: [{ label: 'Revenue', data: sortedDmc.map(d => d[1]), backgroundColor: COLORS }] },
+    data: { labels: sortedDmc.map(d => d[0]), datasets: [{ label: 'Revenue', data: sortedDmc.map(d => d[1]), backgroundColor: colorsForCountries(sortedDmc.map(d => d[0])) }] },
     options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { callback: v => '$' + v.toLocaleString() } } } }
   });
 
