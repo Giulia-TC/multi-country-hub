@@ -636,6 +636,14 @@ function destroyChart(id) {
 }
 
 const COLORS = ['#1B2A4A','#C5A572','#4299E1','#48BB78','#ED8936','#9F7AEA','#F56565','#38B2AC','#E53E3E','#D69E2E','#667EEA','#FC8181'];
+const COUNTRY_COLORS = {
+  'France':'#4b2d23','Morocco':'#ef5928','UK':'#7d8794','Spain':'#7c1137',
+  'Italy':'#c6b256','UAE':'#ada263','Greece':'#0b1956','Turkey':'#247e81',
+  'Thailand':'#c5a158','Indonesia':'#5e7374','Japan':'#e63c60','East Africa':'#59a52c'
+};
+function colorsForCountries(labels) {
+  return labels.map((l, i) => COUNTRY_COLORS[l] || COLORS[i % COLORS.length]);
+}
 
 // ===== NAVIGATION =====
 document.querySelectorAll('.nav-item').forEach(item => {
@@ -759,10 +767,11 @@ function renderDashboard() {
 
   // DMC chart
   const dmcCounts = countBy(data, '_subsidiary');
+  const dmcLabels = Object.keys(dmcCounts);
   destroyChart('chartDMC');
   chartInstances['chartDMC'] = new Chart(document.getElementById('chartDMC'), {
     type: 'bar',
-    data: { labels: Object.keys(dmcCounts), datasets: [{ label: 'Trips', data: Object.values(dmcCounts), backgroundColor: COLORS }] },
+    data: { labels: dmcLabels, datasets: [{ label: 'Trips', data: Object.values(dmcCounts), backgroundColor: colorsForCountries(dmcLabels) }] },
     options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } } }
   });
 
@@ -805,10 +814,11 @@ function renderDashboard() {
   // Revenue by DMC
   const revByDmc = {};
   confirmed.forEach(r => { revByDmc[r._subsidiary] = (revByDmc[r._subsidiary] || 0) + r._salePrice; });
+  const revLabels = Object.keys(revByDmc);
   destroyChart('chartRevenue');
   chartInstances['chartRevenue'] = new Chart(document.getElementById('chartRevenue'), {
     type: 'bar',
-    data: { labels: Object.keys(revByDmc), datasets: [{ label: 'Revenue ($)', data: Object.values(revByDmc), backgroundColor: COLORS }] },
+    data: { labels: revLabels, datasets: [{ label: 'Revenue ($)', data: Object.values(revByDmc), backgroundColor: colorsForCountries(revLabels) }] },
     options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { callback: v => '$' + v.toLocaleString() } } } }
   });
 }
