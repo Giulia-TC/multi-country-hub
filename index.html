@@ -735,11 +735,11 @@ function renderDashboard() {
       monthlyCounts[key] = (monthlyCounts[key] || 0) + 1;
     }
   });
-  const monthKeys = Object.keys(monthlyCounts);
+  const monthKeys = Object.keys(monthlyCounts).sort((a, b) => new Date(a) - new Date(b));
   destroyChart('chartMonthly');
   chartInstances['chartMonthly'] = new Chart(document.getElementById('chartMonthly'), {
     type: 'line',
-    data: { labels: monthKeys, datasets: [{ label: 'Trips Created', data: Object.values(monthlyCounts), borderColor: '#1B2A4A', backgroundColor: 'rgba(27,42,74,.1)', fill: true, tension: .3 }] },
+    data: { labels: monthKeys, datasets: [{ label: 'Trips Created', data: monthKeys.map(k => monthlyCounts[k]), borderColor: '#1B2A4A', backgroundColor: 'rgba(27,42,74,.1)', fill: true, tension: .3 }] },
     options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } } }
   });
 
