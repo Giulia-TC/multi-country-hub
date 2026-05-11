@@ -289,6 +289,9 @@ body.combo-dragging .combo-drop-zone{display:block !important}
           <div class="table-filters">
             <input type="text" id="pipelineSearch" placeholder="Search client or advisor..." oninput="renderPipeline()">
             <select id="pipelineFilterDMC" onchange="renderPipeline()"><option value="">All DMCs</option></select>
+            <select id="pipelineFilterOwner" onchange="renderPipeline()"><option value="">All Owners</option></select>
+            <select id="pipelineFilterCreated" onchange="renderPipeline()"><option value="">Any Created Month</option></select>
+            <select id="pipelineFilterStart" onchange="renderPipeline()"><option value="">Any Start Month</option></select>
             <select id="pipelineFilterStage" onchange="renderPipeline()"><option value="">All Stages</option></select>
             <select id="pipelineFilterRole" onchange="renderPipeline()"><option value="">All Roles</option><option value="Parent">Parent</option><option value="Child">Child</option></select>
             <label class="pilot-toggle"><input type="checkbox" id="pipelinePilotOnly" onchange="renderPipeline()"> <span>Pilot Only</span></label>
@@ -306,6 +309,9 @@ body.combo-dragging .combo-drop-zone{display:block !important}
           <div class="table-filters">
             <input type="text" id="activeSearch" placeholder="Search..." oninput="renderActive()">
             <select id="activeFilterDMC" onchange="renderActive()"><option value="">All DMCs</option></select>
+            <select id="activeFilterOwner" onchange="renderActive()"><option value="">All Owners</option></select>
+            <select id="activeFilterCreated" onchange="renderActive()"><option value="">Any Created Month</option></select>
+            <select id="activeFilterStart" onchange="renderActive()"><option value="">Any Start Month</option></select>
             <label class="pilot-toggle"><input type="checkbox" id="activePilotOnly" onchange="renderActive()"> <span>Pilot Only</span></label>
           </div>
         </div>
@@ -321,6 +327,9 @@ body.combo-dragging .combo-drop-zone{display:block !important}
           <div class="table-filters">
             <input type="text" id="deliveredSearch" placeholder="Search..." oninput="renderDelivered()">
             <select id="deliveredFilterDMC" onchange="renderDelivered()"><option value="">All DMCs</option></select>
+            <select id="deliveredFilterOwner" onchange="renderDelivered()"><option value="">All Owners</option></select>
+            <select id="deliveredFilterCreated" onchange="renderDelivered()"><option value="">Any Created Month</option></select>
+            <select id="deliveredFilterStart" onchange="renderDelivered()"><option value="">Any Start Month</option></select>
             <label class="pilot-toggle"><input type="checkbox" id="deliveredPilotOnly" onchange="renderDelivered()"> <span>Pilot Only</span></label>
           </div>
         </div>
@@ -674,16 +683,47 @@ function updateBadges() {
 function populateFilters() {
   const dmcs = [...new Set(historyData.map(r => r._subsidiary))].filter(Boolean).sort();
   const stages = [...new Set(historyData.map(r => r['Lead Stage']).filter(Boolean))].sort();
-  ['pipelineFilterDMC','activeFilterDMC','deliveredFilterDMC','comboFilterDMC'].forEach(id => {
+  const owners = [...new Set(historyData.map(r => r['Trip: Owner Name']).filter(Boolean))].sort();
+
+  // Build month list (YYYY-MM) from both created and start dates, sorted chronologically
+  function monthsFrom(field) {
+    const set = new Set();
+    historyData.forEach(r => {
+      const d = parseDate(r[field]);
+      if (d && !isNaN(d)) set.add(d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0'));
+    });
+    return [...set].sort();
+  }
+  const createdMonths = monthsFrom('Trip: Created Date');
+  const startMonths = monthsFrom('Trip Start Date');
+  const fmtMonth = m => {
+    const [y, mm] = m.split('-');
+    return new Date(+y, +mm - 1, 1).toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+  };
+
+  function fillSelect(id, placeholder, options) {
     const sel = document.getElementById(id);
+    if (!sel) return;
     const val = sel.value;
-    sel.innerHTML = '<option value="">All DMCs</option>' + dmcs.map(d => `<option value="${d}">${d}</option>`).join('');
+    sel.innerHTML = `<option value="">${placeholder}</option>` + options.map(o => `<option value="${o.value}">${o.label}</option>`).join('');
     sel.value = val;
-  });
-  const stageSel = document.getElementById('pipelineFilterStage');
-  const sv = stageSel.value;
-  stageSel.innerHTML = '<option value="">All Stages</option>' + stages.map(s => `<option value="${s}">${s}</option>`).join('');
-  stageSel.value = sv;
+  }
+
+  ['pipelineFilterDMC','activeFilterDMC','deliveredFilterDMC','comboFilterDMC'].forEach(id =>
+    fillSelect(id, 'All DMCs', dmcs.map(d => ({value: d, label: d}))));
+  ['pipelineFilterOwner','activeFilterOwner','deliveredFilterOwner'].forEach(id =>
+    fillSelect(id, 'All Owners', owners.map(o => ({value: o, label: o}))));
+  ['pipelineFilterCreated','activeFilterCreated','deliveredFilterCreated'].forEach(id =>
+    fillSelect(id, 'Any Created Month', createdMonths.map(m => ({value: m, label: fmtMonth(m)}))));
+  ['pipelineFilterStart','activeFilterStart','deliveredFilterStart'].forEach(id =>
+    fillSelect(id, 'Any Start Month', startMonths.map(m => ({value: m, label: fmtMonth(m)}))));
+
+  fillSelect('pipelineFilterStage', 'All Stages', stages.map(s => ({value: s, label: s})));
+}
+
+function monthKey(dateStr) {
+  const d = parseDate(dateStr);
+  return (d && !isNaN(d)) ? (d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0')) : '';
 }
 
 // ===== DASHBOARD =====
@@ -784,6 +824,9 @@ function isPilot(r) {
 function renderPipeline() {
   const search = (document.getElementById('pipelineSearch').value || '').toLowerCase();
   const filterDMC = document.getElementById('pipelineFilterDMC').value;
+  const filterOwner = document.getElementById('pipelineFilterOwner').value;
+  const filterCreated = document.getElementById('pipelineFilterCreated').value;
+  const filterStart = document.getElementById('pipelineFilterStart').value;
   const filterStage = document.getElementById('pipelineFilterStage').value;
   const filterRole = document.getElementById('pipelineFilterRole').value;
   const pilotOnly = document.getElementById('pipelinePilotOnly').checked;
@@ -792,6 +835,9 @@ function renderPipeline() {
   if (pilotOnly) data = data.filter(isPilot);
   if (search) data = data.filter(r => (r['Trip: Client Name'] + r['Trip: Owner Name']).toLowerCase().includes(search));
   if (filterDMC) data = data.filter(r => r._subsidiary === filterDMC);
+  if (filterOwner) data = data.filter(r => r['Trip: Owner Name'] === filterOwner);
+  if (filterCreated) data = data.filter(r => monthKey(r['Trip: Created Date']) === filterCreated);
+  if (filterStart) data = data.filter(r => monthKey(r['Trip Start Date']) === filterStart);
   if (filterStage) data = data.filter(r => r['Lead Stage'] === filterStage);
   if (filterRole) data = data.filter(r => r._role === filterRole);
 
@@ -814,12 +860,18 @@ function renderPipeline() {
 function renderActive() {
   const search = (document.getElementById('activeSearch').value || '').toLowerCase();
   const filterDMC = document.getElementById('activeFilterDMC').value;
+  const filterOwner = document.getElementById('activeFilterOwner').value;
+  const filterCreated = document.getElementById('activeFilterCreated').value;
+  const filterStart = document.getElementById('activeFilterStart').value;
   const pilotOnly = document.getElementById('activePilotOnly').checked;
 
   let data = historyData.filter(r => r['Status'] === 'Confirmed');
   if (pilotOnly) data = data.filter(isPilot);
   if (search) data = data.filter(r => (r['Trip: Client Name'] + r['Trip: Owner Name']).toLowerCase().includes(search));
   if (filterDMC) data = data.filter(r => r._subsidiary === filterDMC);
+  if (filterOwner) data = data.filter(r => r['Trip: Owner Name'] === filterOwner);
+  if (filterCreated) data = data.filter(r => monthKey(r['Trip: Created Date']) === filterCreated);
+  if (filterStart) data = data.filter(r => monthKey(r['Trip Start Date']) === filterStart);
 
   document.getElementById('activeCountLabel').textContent = data.length;
   const table = document.getElementById('activeTable');
@@ -840,6 +892,9 @@ function renderActive() {
 function renderDelivered() {
   const search = (document.getElementById('deliveredSearch').value || '').toLowerCase();
   const filterDMC = document.getElementById('deliveredFilterDMC').value;
+  const filterOwner = document.getElementById('deliveredFilterOwner').value;
+  const filterCreated = document.getElementById('deliveredFilterCreated').value;
+  const filterStart = document.getElementById('deliveredFilterStart').value;
   const pilotOnly = document.getElementById('deliveredPilotOnly').checked;
   const today = new Date(); today.setHours(0,0,0,0);
 
@@ -851,6 +906,9 @@ function renderDelivered() {
   if (pilotOnly) data = data.filter(isPilot);
   if (search) data = data.filter(r => (r['Trip: Client Name'] + r['Trip: Owner Name']).toLowerCase().includes(search));
   if (filterDMC) data = data.filter(r => r._subsidiary === filterDMC);
+  if (filterOwner) data = data.filter(r => r['Trip: Owner Name'] === filterOwner);
+  if (filterCreated) data = data.filter(r => monthKey(r['Trip: Created Date']) === filterCreated);
+  if (filterStart) data = data.filter(r => monthKey(r['Trip Start Date']) === filterStart);
   data.sort((a, b) => (parseDate(b['Trip End Date']) || 0) - (parseDate(a['Trip End Date']) || 0));
 
   document.getElementById('deliveredCountLabel').textContent = data.length;
