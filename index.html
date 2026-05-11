@@ -1369,10 +1369,11 @@ function renderRoutes() {
 
   // Country involvement
   const involvement = countBy(historyData, '_subsidiary');
+  const involvementLabels = Object.keys(involvement);
   destroyChart('chartCountryInvolvement');
   chartInstances['chartCountryInvolvement'] = new Chart(document.getElementById('chartCountryInvolvement'), {
     type: 'polarArea',
-    data: { labels: Object.keys(involvement), datasets: [{ data: Object.values(involvement), backgroundColor: COLORS.map(c => c + 'CC') }] },
+    data: { labels: involvementLabels, datasets: [{ data: Object.values(involvement), backgroundColor: colorsForCountries(involvementLabels).map(c => c + 'CC') }] },
     options: { responsive: true, plugins: { legend: { position: 'bottom' } } }
   });
 
