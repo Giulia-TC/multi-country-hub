@@ -1204,13 +1204,13 @@ function renderTracker() {
   });
 
   // Kanban: group by status
-  const statusGroups = { 'Inquiry': [], 'Confirmed': [], 'Negotiating': [], 'Lost': [], 'Postponed': [] };
+  const statusGroups = { 'Inquiry': [], 'Confirmed': [], 'Cancelled': [], 'Lost': [], 'Postponed': [] };
   Object.values(groups).forEach(g => {
     if (search && !g.client.toLowerCase().includes(search)) return;
     const statuses = g.trips.map(t => t['Status']);
     let mainStatus = 'Inquiry';
     if (statuses.includes('Confirmed')) mainStatus = 'Confirmed';
-    else if (statuses.includes('Negotiating')) mainStatus = 'Negotiating';
+    else if (statuses.includes('Cancelled')) mainStatus = 'Cancelled';
     else if (statuses.every(s => s === 'Lost')) mainStatus = 'Lost';
     else if (statuses.includes('Postponed')) mainStatus = 'Postponed';
     if (!statusGroups[mainStatus]) statusGroups[mainStatus] = [];
