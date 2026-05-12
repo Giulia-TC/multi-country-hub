@@ -87,9 +87,10 @@ tr:hover{background:#FAFBFC}
 .badge-inquiry{background:#BEE3F8;color:#2A4365}
 .badge-lost{background:#FED7D7;color:#742A2A}
 .badge-postponed{background:#FEFCBF;color:#744210}
-.badge-negotiating{background:#E9D8FD;color:#44337A}
-.badge-proposal{background:#FEEBC8;color:#7B341E}
-.badge-newlead{background:#B2F5EA;color:#234E52}
+.badge-negotiating{background:#D4A017;color:#fff}
+.badge-proposal{background:#2F7F7F;color:#fff}
+.badge-newlead{background:#6FA8FF;color:#fff}
+.badge-firstcontact{background:#9A84D6;color:#fff}
 .badge-parent{background:var(--navy);color:#fff;padding:2px 8px;border-radius:4px;font-size:.65rem;font-weight:700}
 .badge-child{background:var(--gold);color:var(--navy);padding:2px 8px;border-radius:4px;font-size:.65rem;font-weight:700}
 
@@ -616,6 +617,7 @@ function statusBadge(status) {
   else if (s.includes('postpone')) cls = 'badge-postponed';
   else if (s.includes('negotiat')) cls = 'badge-negotiating';
   else if (s.includes('proposal')) cls = 'badge-proposal';
+  else if (s.includes('first contact')) cls = 'badge-firstcontact';
   else if (s.includes('new lead')) cls = 'badge-newlead';
   else cls = 'badge-inquiry';
   return `<span class="badge-status ${cls}">${status || 'Unknown'}</span>`;
