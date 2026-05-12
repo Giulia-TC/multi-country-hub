@@ -164,7 +164,7 @@ tr:hover{background:#FAFBFC}
 .combo-card-header{background:var(--navy);padding:14px 18px;display:flex;align-items:center;justify-content:space-between;gap:8px}
 .combo-card-header .combo-client{font-weight:700;font-size:.95rem;color:#fff;flex:1}
 .combo-card-header .combo-countries{display:flex;gap:4px;flex-wrap:wrap}
-.combo-country-chip{background:rgba(255,255,255,.18);color:#fff;border:1px solid rgba(255,255,255,.35);padding:2px 8px;border-radius:4px;font-size:.65rem;font-weight:700;letter-spacing:.5px}
+.combo-country-chip{background:rgba(197,165,114,.25);color:var(--gold);border:1px solid rgba(197,165,114,.4);padding:2px 8px;border-radius:4px;font-size:.65rem;font-weight:700;letter-spacing:.5px}
 .combo-drop-zone{margin:0 12px 0;border:2px dashed #E2E8F0;border-radius:6px;padding:8px 12px;font-size:.72rem;color:#A0AEC0;text-align:center;transition:all .2s;display:none}
 .combo-drop-zone.drag-over,.combo-card.drag-over .combo-drop-zone{display:block;border-color:var(--gold);color:var(--gold);background:rgba(197,165,114,.06)}
 .combo-trips-list{padding:8px 12px 12px}
@@ -1048,20 +1048,15 @@ function renderComboCard(g) {
   const totalRev = [...g.parents,...g.children].filter(r=>r['Status']==='Confirmed').reduce((s,r)=>s+r._salePrice,0);
   const allTrips = [...g.parents,...g.children];
   const gKeyAttr = g.key.replace(/"/g, '&quot;');
-  // Dominant status: Confirmed > Inquiry > Postponed > Cancelled > Lost
-  const statusOrder = {Confirmed:0,Inquiry:1,Postponed:2,Cancelled:3,Lost:4};
-  const dominantStatus = allTrips.map(r => r['Status'] || 'Inquiry')
-    .sort((a,b) => (statusOrder[a]??99) - (statusOrder[b]??99))[0] || 'Inquiry';
-  const statusColor = STATUS_COLORS[dominantStatus] || '#1B2A4A';
-  return `<div class="combo-card${!g.parents.length?' combo-orphan':''}" data-group-id="${gKeyAttr}" style="border-top:4px solid ${statusColor}">
-    <div class="combo-card-header" style="background:${statusColor}">
+  return `<div class="combo-card${!g.parents.length?' combo-orphan':''}" data-group-id="${gKeyAttr}">
+    <div class="combo-card-header">
       <div style="flex:1;min-width:0">
         <div class="combo-client">${g.displayName}</div>
-        <div style="font-size:.68rem;color:rgba(255,255,255,.7);margin-top:1px">${dominantStatus} &middot; ${allTrips.length} trip${allTrips.length!==1?'s':''} &middot; ${g.parents.length}P / ${g.children.length}C</div>
+        <div style="font-size:.68rem;color:rgba(255,255,255,.45);margin-top:1px">${allTrips.length} trip${allTrips.length!==1?'s':''} &bull; ${g.parents.length} parent / ${g.children.length} child</div>
       </div>
       <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0">
         <div class="combo-countries">${allCountries.map(c=>`<span class="combo-country-chip">${c}</span>`).join('')}</div>
-        ${totalRev?`<span style="font-size:.72rem;color:#fff;font-weight:700">${fmtCurrency(totalRev)}</span>`:''}
+        ${totalRev?`<span style="font-size:.7rem;color:var(--gold);font-weight:600">${fmtCurrency(totalRev)}</span>`:''}
       </div>
     </div>
     <div class="combo-drop-zone" data-group-id="${gKeyAttr}">Drop a trip here to add it to this group</div>
