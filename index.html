@@ -644,6 +644,13 @@ const COUNTRY_COLORS = {
 function colorsForCountries(labels) {
   return labels.map((l, i) => COUNTRY_COLORS[l] || COLORS[i % COLORS.length]);
 }
+const STATUS_COLORS = {
+  'Lost':'#C75B5B','Confirmed':'#2E9E6F','Inquiry':'#4F8EF7',
+  'Cancelled':'#6B7280','Postponed':'#D98E04'
+};
+function colorsForStatuses(labels) {
+  return labels.map((l, i) => STATUS_COLORS[l] || COLORS[i % COLORS.length]);
+}
 
 // ===== NAVIGATION =====
 document.querySelectorAll('.nav-item').forEach(item => {
@@ -758,10 +765,11 @@ function renderDashboard() {
 
   // Status chart
   const statusCounts = countBy(data, r => r['Status'] || 'Unknown');
+  const statusLabels = Object.keys(statusCounts);
   destroyChart('chartStatus');
   chartInstances['chartStatus'] = new Chart(document.getElementById('chartStatus'), {
     type: 'doughnut',
-    data: { labels: Object.keys(statusCounts), datasets: [{ data: Object.values(statusCounts), backgroundColor: COLORS }] },
+    data: { labels: statusLabels, datasets: [{ data: Object.values(statusCounts), backgroundColor: colorsForStatuses(statusLabels) }] },
     options: { responsive: true, plugins: { legend: { position: 'bottom' } } }
   });
 
