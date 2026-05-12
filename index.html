@@ -1457,7 +1457,7 @@ function renderSLA() {
   const STAGE_ORDER = ['No Stage', 'New Lead', 'First Contact', 'Proposal Sent', 'Negotiating'];
   const STAGE_COLORS = {
     'No Stage':'#B8BDC7','New Lead':'#6FA8FF','First Contact':'#9A84D6',
-    'Proposal Sent':'#5F7ADB','Negotiating':'#D4A017'
+    'Proposal Sent':'#2F7F7F','Negotiating':'#D4A017'
   };
   // Use the defined order, then append any other stages found in data
   const orderedStages = [...STAGE_ORDER, ...Object.keys(stageCounts).filter(s => !STAGE_ORDER.includes(s))]
