@@ -1282,7 +1282,7 @@ function renderDMC() {
     type: 'bar',
     data: {
       labels: dmcStats.map(d => d.dmc),
-      datasets: [{ label: 'Conversion %', data: dmcStats.map(d => d.convRate), backgroundColor: '#48BB78' }]
+      datasets: [{ label: 'Conversion %', data: dmcStats.map(d => d.convRate), backgroundColor: colorsForCountries(dmcStats.map(d => d.dmc)) }]
     },
     options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, max: 100, ticks: { callback: v => v + '%' } } } }
   });
