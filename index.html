@@ -1218,20 +1218,22 @@ function renderTracker() {
   });
 
   const kanban = document.getElementById('trackerKanban');
-  kanban.innerHTML = Object.entries(statusGroups).map(([status, clients]) => `
-    <div class="kanban-col">
-      <div class="kanban-col-header">${status} <span class="count">${clients.length}</span></div>
+  kanban.innerHTML = Object.entries(statusGroups).map(([status, clients]) => {
+    const color = STATUS_COLORS[status] || '#1B2A4A';
+    return `
+    <div class="kanban-col" style="border-top:3px solid ${color}">
+      <div class="kanban-col-header" style="color:${color}">${status} <span class="count" style="background:${color};color:#fff">${clients.length}</span></div>
       ${clients.map(g => {
         const countries = [...new Set(g.trips.map(t => t._subsidiary))];
         const parent = g.trips.find(t => t._role === 'Parent');
-        return `<div class="kanban-card">
+        return `<div class="kanban-card" style="border-left:3px solid ${color}">
           <div class="client">${g.client}</div>
           <div class="meta">${g.trips.length} trip records &middot; ${parent ? parent['Trip: Owner Name'] : g.trips[0]['Trip: Owner Name']}</div>
           <div class="countries">${countries.map(c => `<span class="country-tag">${c}</span>`).join('')}</div>
         </div>`;
       }).join('')}
-    </div>
-  `).join('');
+    </div>`;
+  }).join('');
 
   // Table
   let allTrips = sourceData.filter(r => !search || r._client.toLowerCase().includes(search));
