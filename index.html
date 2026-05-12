@@ -1452,12 +1452,26 @@ function renderSLA() {
     <tr><td>Last-minute changes response</td><td>48 hours</td><td>Parent</td></tr>
   `;
 
-  // Lead stage distribution for pilot
+  // Lead stage distribution for pilot — fixed order and brand colours
   const stageCounts = countBy(pilot, r => r['Lead Stage'] || 'No Stage');
+  const STAGE_ORDER = ['No Stage', 'New Lead', 'First Contact', 'Proposal Sent', 'Negotiating'];
+  const STAGE_COLORS = {
+    'No Stage':'#B8BDC7','New Lead':'#6FA8FF','First Contact':'#9A84D6',
+    'Proposal Sent':'#5F7ADB','Negotiating':'#D4A017'
+  };
+  // Use the defined order, then append any other stages found in data
+  const orderedStages = [...STAGE_ORDER, ...Object.keys(stageCounts).filter(s => !STAGE_ORDER.includes(s))]
+    .filter(s => stageCounts[s] > 0);
   destroyChart('chartSlaStages');
   chartInstances['chartSlaStages'] = new Chart(document.getElementById('chartSlaStages'), {
     type: 'pie',
-    data: { labels: Object.keys(stageCounts), datasets: [{ data: Object.values(stageCounts), backgroundColor: COLORS }] },
+    data: {
+      labels: orderedStages,
+      datasets: [{
+        data: orderedStages.map(s => stageCounts[s]),
+        backgroundColor: orderedStages.map((s, i) => STAGE_COLORS[s] || COLORS[i % COLORS.length])
+      }]
+    },
     options: { responsive: true, plugins: { legend: { position: 'bottom' } } }
   });
 
