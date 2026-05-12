@@ -195,6 +195,14 @@ tr:hover{background:#FAFBFC}
 .combo-new-group-zone.drag-over{border-color:var(--green);background:rgba(72,187,120,.06);color:var(--green)}
 body.combo-dragging .combo-card{border-color:rgba(197,165,114,.5)}
 body.combo-dragging .combo-drop-zone{display:block !important}
+.combo-hint{position:relative;background:#F0F7FF;border:1px solid #C7D9F2;border-left:4px solid #4F8EF7;border-radius:8px;padding:14px 36px 14px 16px;margin-bottom:20px;font-size:.78rem;color:var(--text)}
+.combo-hint-title{font-weight:700;color:var(--navy);margin-bottom:6px;font-size:.82rem}
+.combo-hint-list{margin:0;padding-left:18px;line-height:1.7}
+.combo-hint-list li{margin-bottom:2px}
+.combo-hint-note{margin-top:8px;font-size:.7rem;color:var(--text-light);font-style:italic}
+.combo-hint-close{position:absolute;top:8px;right:8px;background:none;border:none;font-size:1.2rem;color:#A0AEC0;cursor:pointer;padding:0 6px;line-height:1;border-radius:4px}
+.combo-hint-close:hover{color:var(--navy);background:rgba(255,255,255,.5)}
+.combo-hint.hidden{display:none}
 .combo-reset-btn{background:none;border:1px solid #E2E8F0;color:var(--text-light);padding:5px 12px;border-radius:6px;font-size:.75rem;cursor:pointer;transition:var(--transition)}
 .combo-reset-btn:hover{border-color:var(--red);color:var(--red);background:#FFF5F5}
 @media(max-width:768px){.combo-grid{grid-template-columns:1fr}}
@@ -345,6 +353,17 @@ body.combo-dragging .combo-drop-zone{display:block !important}
 
     <!-- ===== COMBO GROUPS ===== -->
     <div class="page" id="page-combos">
+      <div class="combo-hint" id="comboHint">
+        <button class="combo-hint-close" onclick="dismissComboHint()" title="Hide">×</button>
+        <div class="combo-hint-title">How to organise combo groups</div>
+        <ul class="combo-hint-list">
+          <li><b>Drag</b> the <span style="font-family:monospace">⠿</span> handle on a trip to move it onto another group card</li>
+          <li>Click <b>×</b> on a trip to send it to the <i>Unassigned Trips</i> pool at the top</li>
+          <li>Drop a trip onto the <b>⊕ New Group</b> zone (bottom) to start a new group</li>
+          <li>Click <b>↺ Reset</b> to restore the original auto-grouping</li>
+        </ul>
+        <div class="combo-hint-note">Changes are saved in your browser only — they don't sync across devices or users.</div>
+      </div>
       <div class="flex-between" style="margin-bottom:20px">
         <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
           <h3 class="section-title" style="margin:0">Combo Groups — Parent + Children</h3>
@@ -977,6 +996,18 @@ function resetComboState() {
   if (!confirm('Reset all manual grouping changes?')) return;
   comboManualMap = {}; comboCustomGroupNames = {};
   saveComboState(); renderCombos();
+}
+
+function dismissComboHint() {
+  document.getElementById('comboHint').classList.add('hidden');
+  localStorage.setItem('comboHintDismissed', '1');
+}
+// Apply persisted hint state on load
+if (localStorage.getItem('comboHintDismissed') === '1') {
+  document.addEventListener('DOMContentLoaded', () => {
+    const h = document.getElementById('comboHint');
+    if (h) h.classList.add('hidden');
+  });
 }
 
 function normGroupKey(name) {
