@@ -767,11 +767,13 @@ function renderDashboard() {
 
   // Status chart
   const statusCounts = countBy(data, r => r['Status'] || 'Unknown');
-  const statusLabels = Object.keys(statusCounts);
+  const STATUS_ORDER = ['Inquiry', 'Confirmed', 'Lost', 'Cancelled', 'Postponed'];
+  const statusLabels = [...STATUS_ORDER, ...Object.keys(statusCounts).filter(s => !STATUS_ORDER.includes(s))]
+    .filter(s => statusCounts[s] > 0);
   destroyChart('chartStatus');
   chartInstances['chartStatus'] = new Chart(document.getElementById('chartStatus'), {
     type: 'doughnut',
-    data: { labels: statusLabels, datasets: [{ data: Object.values(statusCounts), backgroundColor: colorsForStatuses(statusLabels) }] },
+    data: { labels: statusLabels, datasets: [{ data: statusLabels.map(s => statusCounts[s]), backgroundColor: colorsForStatuses(statusLabels) }] },
     options: { responsive: true, plugins: { legend: { position: 'bottom' } } }
   });
 
