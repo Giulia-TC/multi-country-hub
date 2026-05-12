@@ -91,8 +91,8 @@ tr:hover{background:#FAFBFC}
 .badge-proposal{background:#2F7F7F;color:#fff}
 .badge-newlead{background:#6FA8FF;color:#fff}
 .badge-firstcontact{background:#9A84D6;color:#fff}
-.badge-parent{background:var(--navy);color:#fff;padding:2px 8px;border-radius:4px;font-size:.65rem;font-weight:700}
-.badge-child{background:var(--gold);color:var(--navy);padding:2px 8px;border-radius:4px;font-size:.65rem;font-weight:700}
+.badge-parent{background:#354e6a;color:#fff;padding:2px 8px;border-radius:4px;font-size:.65rem;font-weight:700}
+.badge-child{background:#b7e1cd;color:#1B2A4A;padding:2px 8px;border-radius:4px;font-size:.65rem;font-weight:700}
 
 /* ===== SLA BARS ===== */
 .sla-bar{height:8px;border-radius:4px;background:#EDF2F7;overflow:hidden;width:100%;max-width:200px}
@@ -806,10 +806,11 @@ function renderDashboard() {
 
   // Role split
   const roleCounts = countBy(data, '_role');
+  const roleLabels = ['Parent', 'Child'].filter(r => roleCounts[r]);
   destroyChart('chartRole');
   chartInstances['chartRole'] = new Chart(document.getElementById('chartRole'), {
     type: 'doughnut',
-    data: { labels: Object.keys(roleCounts), datasets: [{ data: Object.values(roleCounts), backgroundColor: ['#1B2A4A', '#C5A572'] }] },
+    data: { labels: roleLabels, datasets: [{ data: roleLabels.map(r => roleCounts[r]), backgroundColor: roleLabels.map(r => r === 'Parent' ? '#354e6a' : '#b7e1cd') }] },
     options: { responsive: true, plugins: { legend: { position: 'bottom' } } }
   });
 
@@ -1275,8 +1276,8 @@ function renderDMC() {
     data: {
       labels: dmcStats.map(d => d.dmc),
       datasets: [
-        { label: 'Parent', data: dmcStats.map(d => d.parents), backgroundColor: '#1B2A4A' },
-        { label: 'Child', data: dmcStats.map(d => d.children), backgroundColor: '#C5A572' }
+        { label: 'Parent', data: dmcStats.map(d => d.parents), backgroundColor: '#354e6a' },
+        { label: 'Child', data: dmcStats.map(d => d.children), backgroundColor: '#b7e1cd' }
       ]
     },
     options: { responsive: true, scales: { x: { stacked: true }, y: { stacked: true, beginAtZero: true, ticks: { stepSize: 1 } } } }
