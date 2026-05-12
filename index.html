@@ -181,6 +181,11 @@ tr:hover{background:#FAFBFC}
 .combo-trip-remove:hover{color:var(--red);background:#FED7D7}
 .combo-missing{padding:10px 12px;font-size:.78rem;color:var(--text-light);font-style:italic}
 .combo-orphan .combo-card-header{background:#718096}
+.combo-card .badge-confirmed{background:#2E9E6F;color:#fff}
+.combo-card .badge-inquiry{background:#4F8EF7;color:#fff}
+.combo-card .badge-lost{background:#C75B5B;color:#fff}
+.combo-card .badge-postponed{background:#D98E04;color:#fff}
+.combo-card .badge-cancelled{background:#6B7280;color:#fff}
 .combo-unassigned{background:var(--white);border-radius:var(--radius);border:2px dashed #E2E8F0;padding:16px;margin-bottom:20px;transition:all .2s}
 .combo-unassigned.drag-over{border-color:var(--blue);background:rgba(66,153,225,.04)}
 .combo-unassigned-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
@@ -612,6 +617,7 @@ function statusBadge(status) {
   const s = (status || '').toLowerCase();
   let cls = '';
   if (s.includes('confirmed')) cls = 'badge-confirmed';
+  else if (s.includes('cancel')) cls = 'badge-cancelled';
   else if (s.includes('inquiry')) cls = 'badge-inquiry';
   else if (s.includes('lost')) cls = 'badge-lost';
   else if (s.includes('postpone')) cls = 'badge-postponed';
