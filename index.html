@@ -374,6 +374,7 @@ body.combo-dragging .combo-drop-zone{display:block !important}
           <select id="comboFilterDMC" onchange="renderCombos()"><option value="">All DMCs</option></select>
           <select id="comboFilterStatus" onchange="renderCombos()"><option value="">All Statuses</option><option value="Confirmed">Confirmed</option><option value="Inquiry">Inquiry</option><option value="Lost">Lost</option><option value="Postponed">Postponed</option></select>
           <label class="pilot-toggle"><input type="checkbox" id="comboPilotOnly" onchange="renderCombos()"> <span>Pilot Only</span></label>
+          <label class="pilot-toggle" style="background:#FFF5E6;border-color:#FBD38D" title="Show only groups missing a parent or child"><input type="checkbox" id="comboUngroupedOnly" onchange="renderCombos()"> <span>Ungrouped Only</span></label>
           <button class="combo-reset-btn" onclick="resetComboState()" title="Reset all manual grouping changes">↺ Reset</button>
         </div>
       </div>
@@ -1108,6 +1109,7 @@ function renderCombos() {
   const filterDMC = document.getElementById('comboFilterDMC').value;
   const filterStatus = document.getElementById('comboFilterStatus').value;
   const pilotOnly = document.getElementById('comboPilotOnly').checked;
+  const ungroupedOnly = document.getElementById('comboUngroupedOnly').checked;
 
   const source = pilotOnly ? historyData.filter(isPilot) : historyData;
   let { groups, unassigned } = buildComboGroups(source);
@@ -1116,6 +1118,8 @@ function renderCombos() {
     [...g.parents,...g.children].some(r => r['Trip: Owner Name'].toLowerCase().includes(search)));
   if (filterDMC) groups = groups.filter(g => [...g.parents,...g.children].some(r => r._subsidiary === filterDMC));
   if (filterStatus) groups = groups.filter(g => [...g.parents,...g.children].some(r => r['Status'] === filterStatus));
+  // Ungrouped = a group missing its counterpart (parent without child, or child without parent)
+  if (ungroupedOnly) groups = groups.filter(g => g.parents.length === 0 || g.children.length === 0);
 
   const order = {Confirmed:0,Inquiry:1,Negotiating:2,Postponed:3,Lost:4};
   groups.sort((a,b) => {
