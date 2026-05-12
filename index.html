@@ -1502,7 +1502,7 @@ function renderSLA() {
   destroyChart('chartSlaLeadTime');
   chartInstances['chartSlaLeadTime'] = new Chart(document.getElementById('chartSlaLeadTime'), {
     type: 'bar',
-    data: { labels: Object.keys(buckets), datasets: [{ label: 'Trips', data: Object.values(buckets), backgroundColor: '#4299E1' }] },
+    data: { labels: Object.keys(buckets), datasets: [{ label: 'Trips', data: Object.values(buckets), backgroundColor: '#6FA8FF' }] },
     options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } } }
   });
 }
