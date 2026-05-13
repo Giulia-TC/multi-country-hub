@@ -1586,36 +1586,56 @@ function calcAvgLeadTime(data) {
 }
 
 // ===== SF COMPLIANCE =====
+let selectedComplianceTab = null;
+
+function selectComplianceTab(gid) {
+  selectedComplianceTab = selectedComplianceTab === gid ? null : gid;
+  renderCompliance();
+}
+
 function renderCompliance() {
-  // 6 KPI cards — one per tab
+  // Auto-select the first tab with data on initial render
+  if (selectedComplianceTab === null) {
+    const firstWithData = COMPLIANCE_TABS.find(t => (complianceData[t.gid] || []).length > 0);
+    if (firstWithData) selectedComplianceTab = firstWithData.gid;
+  }
+
+  // 6 clickable KPI cards
   document.getElementById('complianceKpis').innerHTML = COMPLIANCE_TABS.map(tab => {
     const rows = complianceData[tab.gid] || [];
     const count = rows.length;
     const isIssue = tab.name.includes('Wrong') || tab.name.includes('Without');
     const bgColor = isIssue ? (count > 0 ? 'rgba(245,101,101,.08)' : 'rgba(72,187,120,.08)') : 'rgba(66,153,225,.08)';
     const borderColor = isIssue ? (count > 0 ? 'rgba(245,101,101,.3)' : 'rgba(72,187,120,.3)') : 'rgba(66,153,225,.3)';
-    return `<div class="kpi-card" style="background:${bgColor};border-color:${borderColor}">
+    const isActive = selectedComplianceTab === tab.gid;
+    const activeStyle = isActive ? `box-shadow:0 0 0 2px ${tab.color};border-color:${tab.color};transform:translateY(-2px)` : '';
+    return `<div class="kpi-card compliance-card" style="background:${bgColor};border-color:${borderColor};cursor:pointer;transition:all .15s;${activeStyle}" onclick="selectComplianceTab('${tab.gid}')">
       <div class="kpi-label" style="color:${tab.color}">${tab.icon} ${tab.name}</div>
       <div class="kpi-value" style="color:${isIssue ? (count > 0 ? 'var(--red)' : 'var(--green)') : 'var(--blue)'}">${count}</div>
       <div class="kpi-sub">${tab.desc}${isIssue ? (count === 0 ? ' — All clear!' : ' — Needs attention') : ''}</div>
     </div>`;
   }).join('');
 
-  // Detail tables for tabs with data
-  let tablesHTML = '';
-  COMPLIANCE_TABS.forEach(tab => {
-    const rows = complianceData[tab.gid] || [];
-    if (rows.length === 0) return;
-    const headers = Object.keys(rows[0]);
-    tablesHTML += `<div class="table-card">
-      <div class="table-header"><h3 style="color:${tab.color}">${tab.icon} ${tab.name} (${rows.length})</h3></div>
-      <div class="table-wrap"><table>
-        <thead><tr>${headers.map(h => `<th>${h}</th>`).join('')}</tr></thead>
-        <tbody>${rows.map(r => `<tr>${headers.map(h => `<td>${r[h] || '--'}</td>`).join('')}</tr>`).join('')}</tbody>
-      </table></div>
-    </div>`;
-  });
-  document.getElementById('complianceTables').innerHTML = tablesHTML || '<div class="empty-state"><div class="icon">&#9989;</div><p>All compliance checks are clear!</p></div>';
+  // Show only the selected report
+  const container = document.getElementById('complianceTables');
+  if (!selectedComplianceTab) {
+    container.innerHTML = '<div class="empty-state" style="padding:40px"><div class="icon">&#128214;</div><p>Click a card above to view its report</p></div>';
+    return;
+  }
+  const tab = COMPLIANCE_TABS.find(t => t.gid === selectedComplianceTab);
+  const rows = complianceData[tab.gid] || [];
+  if (rows.length === 0) {
+    container.innerHTML = `<div class="table-card"><div class="table-header"><h3 style="color:${tab.color}">${tab.icon} ${tab.name}</h3></div><div class="empty-state" style="padding:32px"><div class="icon">&#9989;</div><p>No records — all clear!</p></div></div>`;
+    return;
+  }
+  const headers = Object.keys(rows[0]);
+  container.innerHTML = `<div class="table-card">
+    <div class="table-header"><h3 style="color:${tab.color}">${tab.icon} ${tab.name} (${rows.length})</h3></div>
+    <div class="table-wrap" style="max-height:60vh;overflow:auto"><table>
+      <thead style="position:sticky;top:0;background:#F7FAFC;z-index:1"><tr>${headers.map(h => `<th>${h}</th>`).join('')}</tr></thead>
+      <tbody>${rows.map(r => `<tr>${headers.map(h => `<td>${r[h] || '--'}</td>`).join('')}</tr>`).join('')}</tbody>
+    </table></div>
+  </div>`;
 }
 
 // ===== FRAMEWORK =====
