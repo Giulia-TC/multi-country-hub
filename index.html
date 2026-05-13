@@ -1332,9 +1332,23 @@ function renderDMC() {
     return { dmc, total: trips.length, parents: parents.length, children: children.length, confirmed: confirmed.length, lost: trips.filter(r => r['Status'] === 'Lost').length, rev, convRate: trips.length ? (confirmed.length / trips.length * 100).toFixed(1) : 0 };
   });
 
-  document.getElementById('dmcKpis').innerHTML = dmcStats.slice(0, 4).map(d => `
-    <div class="kpi-card"><div class="kpi-label">${d.dmc}</div><div class="kpi-value">${d.total}</div><div class="kpi-sub">${d.parents}P / ${d.children}C &middot; ${d.convRate}% conv</div></div>
-  `).join('');
+  // Aggregate KPI cards
+  const maxBy = (arr, fn) => arr.reduce((best, x) => fn(x) > fn(best) ? x : best, arr[0] || { dmc: '—' });
+  const mostActive = maxBy(dmcStats, d => d.total);
+  const topRevenue = maxBy(dmcStats, d => d.rev);
+  // Best conversion among DMCs with at least 3 trips to avoid small-sample noise
+  const eligible = dmcStats.filter(d => d.total >= 3);
+  const bestConv = eligible.length ? maxBy(eligible, d => parseFloat(d.convRate)) : (dmcStats[0] || { dmc: '—', convRate: 0 });
+  const topParent = maxBy(dmcStats, d => d.parents);
+
+  const swatch = name => `<span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${COUNTRY_COLORS[name] || '#1B2A4A'};margin-right:6px;vertical-align:middle"></span>`;
+
+  document.getElementById('dmcKpis').innerHTML = `
+    <div class="kpi-card"><div class="kpi-label">Most Active DMC</div><div class="kpi-value" style="font-size:1.4rem">${swatch(mostActive.dmc)}${mostActive.dmc}</div><div class="kpi-sub">${mostActive.total} trip${mostActive.total !== 1 ? 's' : ''} total</div></div>
+    <div class="kpi-card"><div class="kpi-label">Top Revenue DMC</div><div class="kpi-value" style="font-size:1.4rem">${swatch(topRevenue.dmc)}${topRevenue.dmc}</div><div class="kpi-sub">${fmtCurrency(topRevenue.rev)} confirmed</div></div>
+    <div class="kpi-card"><div class="kpi-label">Best Conversion</div><div class="kpi-value" style="font-size:1.4rem">${swatch(bestConv.dmc)}${bestConv.dmc}</div><div class="kpi-sub">${bestConv.convRate}% confirmed (min 3 trips)</div></div>
+    <div class="kpi-card"><div class="kpi-label">Top Parent DMC</div><div class="kpi-value" style="font-size:1.4rem">${swatch(topParent.dmc)}${topParent.dmc}</div><div class="kpi-sub">${topParent.parents} parent trip${topParent.parents !== 1 ? 's' : ''} (lead orchestrator)</div></div>
+  `;
 
   // Role distribution
   destroyChart('chartDmcRoles');
