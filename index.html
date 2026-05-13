@@ -87,10 +87,11 @@ tr:hover{background:#FAFBFC}
 .badge-inquiry{background:#BEE3F8;color:#2A4365}
 .badge-lost{background:#FED7D7;color:#742A2A}
 .badge-postponed{background:#FEFCBF;color:#744210}
-.badge-negotiating{background:#D4A017;color:#fff}
-.badge-proposal{background:#2F7F7F;color:#fff}
-.badge-newlead{background:#6FA8FF;color:#fff}
-.badge-firstcontact{background:#9A84D6;color:#fff}
+.badge-negotiating{background:#EF4444;color:#fff}
+.badge-proposal{background:#F59E0B;color:#fff}
+.badge-newlead{background:#9CA3AF;color:#fff}
+.badge-firstcontact{background:#3B82F6;color:#fff}
+.badge-nearingclose{background:#22C55E;color:#fff}
 .badge-parent{background:#354e6a;color:#fff;padding:2px 8px;border-radius:4px;font-size:.65rem;font-weight:700}
 .badge-child{background:#b7e1cd;color:#1B2A4A;padding:2px 8px;border-radius:4px;font-size:.65rem;font-weight:700}
 
@@ -641,6 +642,7 @@ function statusBadge(status) {
   else if (s.includes('inquiry')) cls = 'badge-inquiry';
   else if (s.includes('lost')) cls = 'badge-lost';
   else if (s.includes('postpone')) cls = 'badge-postponed';
+  else if (s.includes('nearing')) cls = 'badge-nearingclose';
   else if (s.includes('negotiat')) cls = 'badge-negotiating';
   else if (s.includes('proposal')) cls = 'badge-proposal';
   else if (s.includes('first contact')) cls = 'badge-firstcontact';
@@ -1502,10 +1504,10 @@ function renderSLA() {
 
   // Lead stage distribution for pilot — fixed order and brand colours
   const stageCounts = countBy(pilot, r => r['Lead Stage'] || 'No Stage');
-  const STAGE_ORDER = ['No Stage', 'New Lead', 'First Contact', 'Proposal Sent', 'Negotiating'];
+  const STAGE_ORDER = ['No Stage', 'New Lead', 'First Contact', 'Proposal Sent', 'Negotiating', 'Nearing Close'];
   const STAGE_COLORS = {
-    'No Stage':'#B8BDC7','New Lead':'#6FA8FF','First Contact':'#9A84D6',
-    'Proposal Sent':'#2F7F7F','Negotiating':'#D4A017'
+    'No Stage':'#B8BDC7','New Lead':'#9CA3AF','First Contact':'#3B82F6',
+    'Proposal Sent':'#F59E0B','Negotiating':'#EF4444','Nearing Close':'#22C55E'
   };
   // Use the defined order, then append any other stages found in data
   const orderedStages = [...STAGE_ORDER, ...Object.keys(stageCounts).filter(s => !STAGE_ORDER.includes(s))]
