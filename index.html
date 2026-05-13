@@ -205,6 +205,10 @@ body.combo-dragging .combo-drop-zone{display:block !important}
 .combo-hint-close:hover{color:var(--navy);background:rgba(255,255,255,.5)}
 .combo-hint.hidden{display:none}
 .combo-reset-btn{background:none;border:1px solid #E2E8F0;color:var(--text-light);padding:5px 12px;border-radius:6px;font-size:.75rem;cursor:pointer;transition:var(--transition)}
+.notify-btn{background:#4F8EF7;color:#fff;border:none;padding:5px 10px;border-radius:5px;font-size:.7rem;font-weight:600;cursor:pointer;white-space:nowrap;transition:all .15s;display:inline-flex;align-items:center;gap:4px}
+.notify-btn:hover{background:#3B82F6;transform:translateY(-1px);box-shadow:0 2px 4px rgba(79,142,247,.3)}
+.notify-btn.no-email{background:#A0AEC0}
+.notify-btn.no-email:hover{background:#718096}
 .combo-reset-btn:hover{border-color:var(--red);color:var(--red);background:#FFF5F5}
 @media(max-width:768px){.combo-grid{grid-template-columns:1fr}}
 
@@ -487,7 +491,10 @@ body.combo-dragging .combo-drop-zone{display:block !important}
 let pilotData = [];
 let historyData = [];
 let complianceData = {};
+let advisorEmails = {}; // { "Owner Name": "owner@email.com" }
 let chartInstances = {};
+
+const ADVISOR_EMAILS_GID = '1340424908';
 
 const COMPLIANCE_TABS = [
   { name: 'Parent & Child | Leads', gid: '1577212936', icon: '&#128203;', color: '#4299E1', desc: 'Pilot trips from Mar 9' },
@@ -577,9 +584,23 @@ async function loadAllData() {
   const pilotUrl = document.getElementById('settingsPilotUrl').value;
   const histUrl = document.getElementById('settingsHistoryUrl').value;
 
-  // Fetch main data + all 6 compliance tabs in parallel
+  // Fetch main data + all 6 compliance tabs + advisor emails tab in parallel
   const complianceFetches = COMPLIANCE_TABS.map(tab => fetchCSV(`${PILOT_SHEET_BASE}?gid=${tab.gid}&single=true&output=csv`));
-  const [pilotCSV, histCSV, ...complianceCSVs] = await Promise.all([fetchCSV(pilotUrl), fetchCSV(histUrl), ...complianceFetches]);
+  const emailsFetch = fetchCSV(`${PILOT_SHEET_BASE}?gid=${ADVISOR_EMAILS_GID}&single=true&output=csv`);
+  const [pilotCSV, histCSV, emailsCSV, ...complianceCSVs] = await Promise.all([fetchCSV(pilotUrl), fetchCSV(histUrl), emailsFetch, ...complianceFetches]);
+
+  // Build advisor email lookup map
+  advisorEmails = {};
+  if (emailsCSV) {
+    parseCSV(emailsCSV).forEach(row => {
+      const keys = Object.keys(row);
+      const nameKey = keys.find(k => /name/i.test(k)) || keys[0];
+      const emailKey = keys.find(k => /email/i.test(k)) || keys[1];
+      const name = (row[nameKey] || '').trim();
+      const email = (row[emailKey] || '').trim();
+      if (name && email) advisorEmails[name] = email;
+    });
+  }
 
   if (pilotCSV) pilotData = parseCSV(pilotCSV);
   if (histCSV) historyData = parseCSV(histCSV);
@@ -1589,6 +1610,50 @@ function calcAvgLeadTime(data) {
 let selectedComplianceTab = null;
 let complianceFilters = {}; // { gid: { _search: '', columnName: 'value', ... } }
 
+// Email templates per compliance issue type, keyed by tab gid
+function buildComplianceEmail(tab, row) {
+  const ownerName = row['Trip: Owner Name'] || row['Owner Name'] || row['Owner'] || '';
+  const tripName = row['Trip: Client Name'] || row['Trip Name'] || row['Name'] || 'this trip';
+  const firstName = (ownerName.split(/\s+/)[0] || 'there');
+  const to = advisorEmails[ownerName] || '';
+
+  const templates = {
+    '1616703856': { // Child | Wrong Trip Name
+      subject: `Compliance — Wrong Trip Name (Child): ${tripName}`,
+      body: `Hi ${firstName},\n\nQuick heads-up — a compliance check flagged one of your multi-country trips:\n\nTrip: ${tripName}\nIssue: The Child trip name doesn't follow the framework standard.\nRequired format: CT Child [Client Name]\n\nCould you please update the trip name in Salesforce when you get a chance?\n\nReference: Multi-Country Trip Framework — Salesforce Naming\n\nThanks!`
+    },
+    '664319098': { // Parent | Wrong Trip Name
+      subject: `Compliance — Wrong Trip Name (Parent): ${tripName}`,
+      body: `Hi ${firstName},\n\nQuick heads-up — a compliance check flagged one of your multi-country trips:\n\nTrip: ${tripName}\nIssue: The Parent trip name doesn't follow the framework standard.\nRequired format: CT Parent [Client Name]\n\nCould you please update the trip name in Salesforce when you get a chance?\n\nReference: Multi-Country Trip Framework — Salesforce Naming\n\nThanks!`
+    },
+    '1675583544': { // Child | Wrong Agency
+      subject: `Compliance — Wrong Agency: ${tripName}`,
+      body: `Hi ${firstName},\n\nQuick heads-up — a compliance check flagged one of your multi-country trips:\n\nTrip: ${tripName}\nIssue: For Child trips in a multi-country combo, the Agency field should be set to the Parent DMC's name (not the original travel agent).\n\nCould you please update the Agency field in Salesforce when you get a chance?\n\nReference: Multi-Country Trip Framework — Salesforce Naming\n\nThanks!`
+    },
+    '943291452': { // Child | Wrong Collection ID
+      subject: `Compliance — Wrong Collection ID: ${tripName}`,
+      body: `Hi ${firstName},\n\nQuick heads-up — a compliance check flagged one of your multi-country trips:\n\nTrip: ${tripName}\nIssue: The Collection ID on this Child trip needs correction.\n\nCould you please update the Collection ID in Salesforce when you get a chance?\n\nReference: Multi-Country Trip Framework — Salesforce Naming\n\nThanks!`
+    },
+    '364172780': { // Parent & Child Without Threads
+      subject: `Compliance — Missing Email Threads: ${tripName}`,
+      body: `Hi ${firstName},\n\nQuick heads-up — a compliance check flagged that one of your multi-country trips is missing the required email threads:\n\nTrip: ${tripName}\n\nThe framework requires two threads attached to the Salesforce record:\n  • Thread 1: Parent <> Agent (Child always in CC) — Subject: "COMBO TRIP REQUEST: [Client] - [Countries] - [Date] - [Agency]"\n  • Thread 2: Parent <> Child (internal only) — Subject: "INTERNAL COMBO TRIP REQUEST: [Client] - [Countries] - [Date] - [Agency]"\n\nCould you please attach both threads to the trip in Salesforce when you get a chance?\n\nReference: Multi-Country Trip Framework — Communication\n\nThanks!`
+    }
+  };
+  const tpl = templates[tab.gid];
+  if (!tpl) return null;
+  return { to, subject: tpl.subject, body: tpl.body, ownerName };
+}
+
+function notifyOwner(gid, rowIdx) {
+  const tab = COMPLIANCE_TABS.find(t => t.gid === gid);
+  const row = (complianceData[gid] || [])[rowIdx];
+  if (!tab || !row) return;
+  const email = buildComplianceEmail(tab, row);
+  if (!email) return;
+  const url = `mailto:${email.to}?subject=${encodeURIComponent(email.subject)}&body=${encodeURIComponent(email.body)}`;
+  window.location.href = url;
+}
+
 function selectComplianceTab(gid) {
   selectedComplianceTab = selectedComplianceTab === gid ? null : gid;
   renderCompliance();
@@ -1645,6 +1710,9 @@ function renderComplianceTable() {
   }
   const headers = Object.keys(allRows[0]);
   const filters = complianceFilters[tab.gid] || {};
+  // The 5 "problem" tabs that get a Notify Owner button
+  const ACTIONABLE_GIDS = ['1616703856', '664319098', '1675583544', '943291452', '364172780'];
+  const isActionable = ACTIONABLE_GIDS.includes(tab.gid);
 
   // Identify columns suitable for a dropdown filter (≤ 20 unique non-empty values)
   const filterableCols = headers.filter(h => {
@@ -1688,8 +1756,16 @@ function renderComplianceTable() {
       ${filtered.length === 0
         ? '<div class="empty-state" style="padding:32px"><p>No records match the current filters</p></div>'
         : `<table>
-            <thead style="position:sticky;top:0;background:#F7FAFC;z-index:1"><tr>${headers.map(h => `<th>${h}</th>`).join('')}</tr></thead>
-            <tbody>${filtered.map(r => `<tr>${headers.map(h => `<td>${r[h] || '--'}</td>`).join('')}</tr>`).join('')}</tbody>
+            <thead style="position:sticky;top:0;background:#F7FAFC;z-index:1"><tr>${headers.map(h => `<th>${h}</th>`).join('')}${isActionable ? '<th>Action</th>' : ''}</tr></thead>
+            <tbody>${filtered.map(r => {
+              const origIdx = allRows.indexOf(r);
+              const ownerName = r['Trip: Owner Name'] || r['Owner Name'] || r['Owner'] || '';
+              const hasEmail = !!advisorEmails[ownerName];
+              const btn = isActionable
+                ? `<td style="text-align:center"><button class="notify-btn${hasEmail ? '' : ' no-email'}" onclick="notifyOwner('${tab.gid}', ${origIdx})" title="${hasEmail ? 'Email ' + ownerName : 'No email mapped — recipient will be blank'}">&#128231; Notify</button></td>`
+                : '';
+              return `<tr>${headers.map(h => `<td>${r[h] || '--'}</td>`).join('')}${btn}</tr>`;
+            }).join('')}</tbody>
           </table>`}
     </div>
   </div>`;
