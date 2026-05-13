@@ -1587,9 +1587,21 @@ function calcAvgLeadTime(data) {
 
 // ===== SF COMPLIANCE =====
 let selectedComplianceTab = null;
+let complianceFilters = {}; // { gid: { _search: '', columnName: 'value', ... } }
 
 function selectComplianceTab(gid) {
   selectedComplianceTab = selectedComplianceTab === gid ? null : gid;
+  renderCompliance();
+}
+
+function setComplianceFilter(gid, key, value) {
+  if (!complianceFilters[gid]) complianceFilters[gid] = {};
+  complianceFilters[gid][key] = value;
+  renderComplianceTable();
+}
+
+function clearComplianceFilters(gid) {
+  complianceFilters[gid] = {};
   renderCompliance();
 }
 
@@ -1616,25 +1628,70 @@ function renderCompliance() {
     </div>`;
   }).join('');
 
-  // Show only the selected report
+  renderComplianceTable();
+}
+
+function renderComplianceTable() {
   const container = document.getElementById('complianceTables');
   if (!selectedComplianceTab) {
     container.innerHTML = '<div class="empty-state" style="padding:40px"><div class="icon">&#128214;</div><p>Click a card above to view its report</p></div>';
     return;
   }
   const tab = COMPLIANCE_TABS.find(t => t.gid === selectedComplianceTab);
-  const rows = complianceData[tab.gid] || [];
-  if (rows.length === 0) {
+  const allRows = complianceData[tab.gid] || [];
+  if (allRows.length === 0) {
     container.innerHTML = `<div class="table-card"><div class="table-header"><h3 style="color:${tab.color}">${tab.icon} ${tab.name}</h3></div><div class="empty-state" style="padding:32px"><div class="icon">&#9989;</div><p>No records — all clear!</p></div></div>`;
     return;
   }
-  const headers = Object.keys(rows[0]);
+  const headers = Object.keys(allRows[0]);
+  const filters = complianceFilters[tab.gid] || {};
+
+  // Identify columns suitable for a dropdown filter (≤ 20 unique non-empty values)
+  const filterableCols = headers.filter(h => {
+    const uniq = new Set(allRows.map(r => (r[h] || '').trim()).filter(Boolean));
+    return uniq.size > 1 && uniq.size <= 20;
+  });
+
+  // Apply filters
+  let filtered = allRows;
+  const search = (filters._search || '').toLowerCase();
+  if (search) {
+    filtered = filtered.filter(r => headers.some(h => (r[h] || '').toLowerCase().includes(search)));
+  }
+  filterableCols.forEach(col => {
+    if (filters[col]) filtered = filtered.filter(r => (r[col] || '') === filters[col]);
+  });
+
+  // Filter UI
+  const dropdowns = filterableCols.map(col => {
+    const opts = [...new Set(allRows.map(r => (r[col] || '').trim()).filter(Boolean))].sort();
+    return `<select onchange="setComplianceFilter('${tab.gid}', '${col.replace(/'/g, "\\'")}', this.value)" title="${col}">
+      <option value="">${col}</option>
+      ${opts.map(o => `<option value="${o.replace(/"/g, '&quot;')}"${filters[col] === o ? ' selected' : ''}>${o}</option>`).join('')}
+    </select>`;
+  }).join('');
+
+  const activeFilterCount = Object.values(filters).filter(v => v).length;
+
   container.innerHTML = `<div class="table-card">
-    <div class="table-header"><h3 style="color:${tab.color}">${tab.icon} ${tab.name} (${rows.length})</h3></div>
-    <div class="table-wrap" style="max-height:60vh;overflow:auto"><table>
-      <thead style="position:sticky;top:0;background:#F7FAFC;z-index:1"><tr>${headers.map(h => `<th>${h}</th>`).join('')}</tr></thead>
-      <tbody>${rows.map(r => `<tr>${headers.map(h => `<td>${r[h] || '--'}</td>`).join('')}</tr>`).join('')}</tbody>
-    </table></div>
+    <div class="table-header" style="flex-direction:column;align-items:stretch;gap:10px">
+      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px">
+        <h3 style="color:${tab.color}">${tab.icon} ${tab.name} <span style="font-size:.75rem;font-weight:600;background:${tab.color};color:#fff;padding:2px 10px;border-radius:12px;margin-left:8px;vertical-align:middle">${filtered.length}${filtered.length !== allRows.length ? ' / ' + allRows.length : ''}</span></h3>
+        ${activeFilterCount > 0 ? `<button class="combo-reset-btn" onclick="clearComplianceFilters('${tab.gid}')">↺ Clear filters</button>` : ''}
+      </div>
+      <div class="table-filters">
+        <input type="text" placeholder="Search any field..." value="${(filters._search || '').replace(/"/g, '&quot;')}" oninput="setComplianceFilter('${tab.gid}', '_search', this.value)" style="min-width:220px">
+        ${dropdowns}
+      </div>
+    </div>
+    <div class="table-wrap" style="max-height:55vh;overflow:auto">
+      ${filtered.length === 0
+        ? '<div class="empty-state" style="padding:32px"><p>No records match the current filters</p></div>'
+        : `<table>
+            <thead style="position:sticky;top:0;background:#F7FAFC;z-index:1"><tr>${headers.map(h => `<th>${h}</th>`).join('')}</tr></thead>
+            <tbody>${filtered.map(r => `<tr>${headers.map(h => `<td>${r[h] || '--'}</td>`).join('')}</tr>`).join('')}</tbody>
+          </table>`}
+    </div>
   </div>`;
 }
 
