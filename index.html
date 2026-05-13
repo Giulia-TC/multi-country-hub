@@ -1717,7 +1717,7 @@ function renderComplianceTable() {
   const tab = COMPLIANCE_TABS.find(t => t.gid === selectedComplianceTab);
   const allRows = complianceData[tab.gid] || [];
   if (allRows.length === 0) {
-    container.innerHTML = `<div class="table-card"><div class="table-header"><h3 style="color:${tab.color}">${tab.icon} ${tab.name}</h3></div><div class="empty-state" style="padding:32px"><div class="icon">&#9989;</div><p>No records — all clear!</p></div></div>`;
+    container.innerHTML = `<div class="table-card"><div class="table-header"><h3 style="color:#1A2A3A">${tab.icon} ${tab.name}</h3></div><div class="empty-state" style="padding:32px"><div class="icon">&#9989;</div><p>No records — all clear!</p></div></div>`;
     return;
   }
   const headers = Object.keys(allRows[0]);
@@ -1756,7 +1756,7 @@ function renderComplianceTable() {
   container.innerHTML = `<div class="table-card">
     <div class="table-header" style="flex-direction:column;align-items:stretch;gap:10px">
       <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px">
-        <h3 style="color:${tab.color}">${tab.icon} ${tab.name} <span style="font-size:.75rem;font-weight:600;background:${tab.color};color:#fff;padding:2px 10px;border-radius:12px;margin-left:8px;vertical-align:middle">${filtered.length}${filtered.length !== allRows.length ? ' / ' + allRows.length : ''}</span></h3>
+        <h3 style="color:#1A2A3A">${tab.icon} ${tab.name} <span style="font-size:.75rem;font-weight:600;background:#1A2A3A;color:#fff;padding:2px 10px;border-radius:12px;margin-left:8px;vertical-align:middle">${filtered.length}${filtered.length !== allRows.length ? ' / ' + allRows.length : ''}</span></h3>
         ${activeFilterCount > 0 ? `<button class="combo-reset-btn" onclick="clearComplianceFilters('${tab.gid}')">↺ Clear filters</button>` : ''}
       </div>
       <div class="table-filters">
