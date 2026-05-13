@@ -831,11 +831,11 @@ function renderDashboard() {
 
   // DMC chart
   const dmcCounts = countBy(data, '_subsidiary');
-  const dmcLabels = Object.keys(dmcCounts);
+  const dmcLabels = Object.keys(dmcCounts).sort();
   destroyChart('chartDMC');
   chartInstances['chartDMC'] = new Chart(document.getElementById('chartDMC'), {
     type: 'bar',
-    data: { labels: dmcLabels, datasets: [{ label: 'Trips', data: Object.values(dmcCounts), backgroundColor: colorsForCountries(dmcLabels) }] },
+    data: { labels: dmcLabels, datasets: [{ label: 'Trips', data: dmcLabels.map(l => dmcCounts[l]), backgroundColor: colorsForCountries(dmcLabels) }] },
     options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } } }
   });
 
@@ -879,11 +879,11 @@ function renderDashboard() {
   // Revenue by DMC
   const revByDmc = {};
   confirmed.forEach(r => { revByDmc[r._subsidiary] = (revByDmc[r._subsidiary] || 0) + r._salePrice; });
-  const revLabels = Object.keys(revByDmc);
+  const revLabels = Object.keys(revByDmc).sort();
   destroyChart('chartRevenue');
   chartInstances['chartRevenue'] = new Chart(document.getElementById('chartRevenue'), {
     type: 'bar',
-    data: { labels: revLabels, datasets: [{ label: 'Revenue ($)', data: Object.values(revByDmc), backgroundColor: colorsForCountries(revLabels) }] },
+    data: { labels: revLabels, datasets: [{ label: 'Revenue ($)', data: revLabels.map(l => revByDmc[l]), backgroundColor: colorsForCountries(revLabels) }] },
     options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { callback: v => '$' + v.toLocaleString() } } } }
   });
 }
@@ -1400,7 +1400,7 @@ function renderFinancial() {
   // Revenue by DMC
   const revByDmc = {};
   confirmed.forEach(r => { revByDmc[r._subsidiary] = (revByDmc[r._subsidiary] || 0) + r._salePrice; });
-  const sortedDmc = Object.entries(revByDmc).sort((a, b) => b[1] - a[1]);
+  const sortedDmc = Object.entries(revByDmc).sort((a, b) => a[0].localeCompare(b[0]));
   destroyChart('chartFinDmc');
   chartInstances['chartFinDmc'] = new Chart(document.getElementById('chartFinDmc'), {
     type: 'bar',
