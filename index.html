@@ -9,9 +9,9 @@
 /* ===== RESET & BASE ===== */
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
-  --navy:#1B2A4A;--navy-light:#243556;--navy-dark:#131f36;
-  --gold:#C5A572;--gold-light:#d4bc93;
-  --bg:#F5F6FA;--white:#fff;--text:#2D3748;--text-light:#718096;
+  --navy:#1A2A3A;--navy-light:#243a4d;--navy-dark:#0f1c28;
+  --gold:#b7e1cd;--gold-light:#d4ecdd;
+  --bg:#F5F6FA;--white:#fff;--text:#1A2A3A;--text-light:#718096;
   --green:#48BB78;--red:#F56565;--orange:#ED8936;--blue:#4299E1;--purple:#9F7AEA;
   --radius:10px;--shadow:0 1px 3px rgba(0,0,0,.08);
   --transition:all .2s ease;
@@ -90,10 +90,10 @@ tr:hover{background:#FAFBFC}
 .badge-negotiating{background:#F97316;color:#fff}
 .badge-proposal{background:#F59E0B;color:#fff}
 .badge-newlead{background:#9CA3AF;color:#fff}
-.badge-firstcontact{background:#3B82F6;color:#fff}
+.badge-firstcontact{background:#4F8EF7;color:#fff}
 .badge-nearingclose{background:#22C55E;color:#fff}
-.badge-parent{background:#354e6a;color:#fff;padding:2px 8px;border-radius:4px;font-size:.65rem;font-weight:700}
-.badge-child{background:#b7e1cd;color:#1B2A4A;padding:2px 8px;border-radius:4px;font-size:.65rem;font-weight:700}
+.badge-parent{background:#1b3a5c;color:#fff;padding:2px 8px;border-radius:4px;font-size:.65rem;font-weight:700}
+.badge-child{background:#2a9d8f;color:#fff;padding:2px 8px;border-radius:4px;font-size:.65rem;font-weight:700}
 
 /* ===== SLA BARS ===== */
 .sla-bar{height:8px;border-radius:4px;background:#EDF2F7;overflow:hidden;width:100%;max-width:200px}
@@ -691,7 +691,7 @@ function destroyChart(id) {
 
 const COLORS = ['#1B2A4A','#C5A572','#4299E1','#48BB78','#ED8936','#9F7AEA','#F56565','#38B2AC','#E53E3E','#D69E2E','#667EEA','#FC8181'];
 const COUNTRY_COLORS = {
-  'France':'#4b2d23','Morocco':'#f05a28','UK':'#7c8693','Spain':'#7c1137',
+  'France':'#4b2d23','Morocco':'#f05a28','UK':'#1a2639','Spain':'#7c1137',
   'Italy':'#c6b256','UAE':'#855f48','Greece':'#0b1956','Turkey':'#247e81',
   'Thailand':'#636218','Indonesia':'#5e7374','Japan':'#e63c60','East Africa':'#59a52c'
 };
@@ -699,7 +699,7 @@ function colorsForCountries(labels) {
   return labels.map((l, i) => COUNTRY_COLORS[l] || COLORS[i % COLORS.length]);
 }
 const STATUS_COLORS = {
-  'Lost':'#C75B5B','Confirmed':'#2E9E6F','Inquiry':'#4F8EF7',
+  'Lost':'#E53E3E','Confirmed':'#48BB78','Inquiry':'#3B82F6',
   'Cancelled':'#6B7280','Postponed':'#D98E04'
 };
 function colorsForStatuses(labels) {
@@ -862,7 +862,7 @@ function renderDashboard() {
   destroyChart('chartRole');
   chartInstances['chartRole'] = new Chart(document.getElementById('chartRole'), {
     type: 'doughnut',
-    data: { labels: roleLabels, datasets: [{ data: roleLabels.map(r => roleCounts[r]), backgroundColor: roleLabels.map(r => r === 'Parent' ? '#354e6a' : '#b7e1cd') }] },
+    data: { labels: roleLabels, datasets: [{ data: roleLabels.map(r => roleCounts[r]), backgroundColor: roleLabels.map(r => r === 'Parent' ? '#1b3a5c' : '#2a9d8f') }] },
     options: { responsive: true, plugins: { legend: { position: 'bottom' } } }
   });
 
@@ -872,7 +872,7 @@ function renderDashboard() {
   destroyChart('chartAdvisors');
   chartInstances['chartAdvisors'] = new Chart(document.getElementById('chartAdvisors'), {
     type: 'bar',
-    data: { labels: topAdvisors.map(a => a[0]), datasets: [{ label: 'Trips', data: topAdvisors.map(a => a[1]), backgroundColor: '#C5A572' }] },
+    data: { labels: topAdvisors.map(a => a[0]), datasets: [{ label: 'Trips', data: topAdvisors.map(a => a[1]), backgroundColor: '#5b86a0' }] },
     options: { indexAxis: 'y', responsive: true, plugins: { legend: { display: false } }, scales: { x: { beginAtZero: true, ticks: { stepSize: 1 } } } }
   });
 
@@ -1357,8 +1357,8 @@ function renderDMC() {
     data: {
       labels: dmcStats.map(d => d.dmc),
       datasets: [
-        { label: 'Parent', data: dmcStats.map(d => d.parents), backgroundColor: '#354e6a' },
-        { label: 'Child', data: dmcStats.map(d => d.children), backgroundColor: '#b7e1cd' }
+        { label: 'Parent', data: dmcStats.map(d => d.parents), backgroundColor: '#1b3a5c' },
+        { label: 'Child', data: dmcStats.map(d => d.children), backgroundColor: '#2a9d8f' }
       ]
     },
     options: { responsive: true, scales: { x: { stacked: true }, y: { stacked: true, beginAtZero: true, ticks: { stepSize: 1 } } } }
@@ -1420,7 +1420,7 @@ function renderFinancial() {
   destroyChart('chartFinMonth');
   chartInstances['chartFinMonth'] = new Chart(document.getElementById('chartFinMonth'), {
     type: 'bar',
-    data: { labels: Object.keys(revByMonth), datasets: [{ label: 'Revenue', data: Object.values(revByMonth), backgroundColor: '#C5A572' }] },
+    data: { labels: Object.keys(revByMonth), datasets: [{ label: 'Revenue', data: Object.values(revByMonth), backgroundColor: '#5b86a0' }] },
     options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { callback: v => '$' + v.toLocaleString() } } } }
   });
 
@@ -1563,7 +1563,7 @@ function renderSLA() {
   const stageCounts = countBy(inquiryTrips, r => r['Lead Stage'] || 'No Stage');
   const STAGE_ORDER = ['No Stage', 'New Lead', 'First Contact', 'Proposal Sent', 'Negotiating', 'Nearing Close'];
   const STAGE_COLORS = {
-    'No Stage':'#B8BDC7','New Lead':'#9CA3AF','First Contact':'#3B82F6',
+    'No Stage':'#B8BDC7','New Lead':'#9CA3AF','First Contact':'#4F8EF7',
     'Proposal Sent':'#F59E0B','Negotiating':'#F97316','Nearing Close':'#22C55E'
   };
   const orderedStages = [...STAGE_ORDER, ...Object.keys(stageCounts).filter(s => !STAGE_ORDER.includes(s))]
@@ -1602,7 +1602,7 @@ function renderSLA() {
   destroyChart('chartSlaLeadTime');
   chartInstances['chartSlaLeadTime'] = new Chart(document.getElementById('chartSlaLeadTime'), {
     type: 'bar',
-    data: { labels: Object.keys(buckets), datasets: [{ label: 'Trips', data: Object.values(buckets), backgroundColor: '#6FA8FF' }] },
+    data: { labels: Object.keys(buckets), datasets: [{ label: 'Trips', data: Object.values(buckets), backgroundColor: '#38B2AC' }] },
     options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } } }
   });
 }
@@ -1691,19 +1691,17 @@ function renderCompliance() {
     if (firstWithData) selectedComplianceTab = firstWithData.gid;
   }
 
-  // 6 clickable KPI cards
+  // 6 clickable KPI cards — uniform white style
   document.getElementById('complianceKpis').innerHTML = COMPLIANCE_TABS.map(tab => {
     const rows = complianceData[tab.gid] || [];
     const count = rows.length;
-    const isIssue = tab.name.includes('Wrong') || tab.name.includes('Without');
-    const bgColor = isIssue ? (count > 0 ? 'rgba(245,101,101,.08)' : 'rgba(72,187,120,.08)') : 'rgba(66,153,225,.08)';
-    const borderColor = isIssue ? (count > 0 ? 'rgba(245,101,101,.3)' : 'rgba(72,187,120,.3)') : 'rgba(66,153,225,.3)';
     const isActive = selectedComplianceTab === tab.gid;
-    const activeStyle = isActive ? `box-shadow:0 0 0 2px ${tab.color};border-color:${tab.color};transform:translateY(-2px)` : '';
-    return `<div class="kpi-card compliance-card" style="background:${bgColor};border-color:${borderColor};cursor:pointer;transition:all .15s;${activeStyle}" onclick="selectComplianceTab('${tab.gid}')">
-      <div class="kpi-label" style="color:${tab.color}">${tab.icon} ${tab.name}</div>
-      <div class="kpi-value" style="color:${isIssue ? (count > 0 ? 'var(--red)' : 'var(--green)') : 'var(--blue)'}">${count}</div>
-      <div class="kpi-sub">${tab.desc}${isIssue ? (count === 0 ? ' — All clear!' : ' — Needs attention') : ''}</div>
+    const borderColor = isActive ? '#718096' : '#E2E8F0';
+    const activeStyle = isActive ? 'box-shadow:0 0 0 1px #718096;transform:translateY(-2px)' : '';
+    return `<div class="kpi-card compliance-card" style="background:#FFFFFF;border-color:${borderColor};cursor:pointer;transition:all .15s;${activeStyle}" onclick="selectComplianceTab('${tab.gid}')">
+      <div class="kpi-label" style="color:#1A2A3A">${tab.icon} ${tab.name}</div>
+      <div class="kpi-value" style="color:#1A2A3A">${count}</div>
+      <div class="kpi-sub" style="color:#718096">${tab.desc}</div>
     </div>`;
   }).join('');
 
