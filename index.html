@@ -442,7 +442,10 @@ body.combo-dragging .combo-drop-zone{display:block !important}
         <div class="table-wrap"><table id="slaTable"><thead></thead><tbody></tbody></table></div>
       </div>
       <div class="charts-grid">
-        <div class="chart-card"><h3>Pilot Trips — Lead Stage Distribution</h3><canvas id="chartSlaStages"></canvas></div>
+        <div class="chart-card"><h3>Pilot Trips — Status Distribution</h3><div style="font-size:.72rem;color:var(--text-light);margin:-8px 0 8px">All pilot trips by their Salesforce Status</div><canvas id="chartSlaStages"></canvas></div>
+        <div class="chart-card"><h3>Inquiry Trips — Lead Stage Breakdown</h3><div style="font-size:.72rem;color:var(--text-light);margin:-8px 0 8px">Only trips with Status = Inquiry, broken down by Lead Stage</div><canvas id="chartSlaStagesInquiry"></canvas></div>
+      </div>
+      <div class="charts-grid">
         <div class="chart-card"><h3>Days from Created to Trip Start (Pilot Trips)</h3><canvas id="chartSlaLeadTime"></canvas></div>
       </div>
     </div>
@@ -1502,18 +1505,36 @@ function renderSLA() {
     <tr><td>Last-minute changes response</td><td>48 hours</td><td>Parent</td></tr>
   `;
 
-  // Lead stage distribution for pilot — fixed order and brand colours
-  const stageCounts = countBy(pilot, r => r['Lead Stage'] || 'No Stage');
+  // CHART 1: Status distribution for ALL pilot trips
+  const statusCountsPilot = countBy(pilot, r => r['Status'] || 'Unknown');
+  const SLA_STATUS_ORDER = ['Inquiry', 'Confirmed', 'Lost', 'Cancelled', 'Postponed'];
+  const orderedStatuses = [...SLA_STATUS_ORDER, ...Object.keys(statusCountsPilot).filter(s => !SLA_STATUS_ORDER.includes(s))]
+    .filter(s => statusCountsPilot[s] > 0);
+  destroyChart('chartSlaStages');
+  chartInstances['chartSlaStages'] = new Chart(document.getElementById('chartSlaStages'), {
+    type: 'pie',
+    data: {
+      labels: orderedStatuses,
+      datasets: [{
+        data: orderedStatuses.map(s => statusCountsPilot[s]),
+        backgroundColor: colorsForStatuses(orderedStatuses)
+      }]
+    },
+    options: { responsive: true, plugins: { legend: { position: 'bottom' } } }
+  });
+
+  // CHART 2: Lead Stage breakdown for INQUIRY trips only
+  const inquiryTrips = pilot.filter(r => r['Status'] === 'Inquiry');
+  const stageCounts = countBy(inquiryTrips, r => r['Lead Stage'] || 'No Stage');
   const STAGE_ORDER = ['No Stage', 'New Lead', 'First Contact', 'Proposal Sent', 'Negotiating', 'Nearing Close'];
   const STAGE_COLORS = {
     'No Stage':'#B8BDC7','New Lead':'#9CA3AF','First Contact':'#3B82F6',
     'Proposal Sent':'#F59E0B','Negotiating':'#F97316','Nearing Close':'#22C55E'
   };
-  // Use the defined order, then append any other stages found in data
   const orderedStages = [...STAGE_ORDER, ...Object.keys(stageCounts).filter(s => !STAGE_ORDER.includes(s))]
     .filter(s => stageCounts[s] > 0);
-  destroyChart('chartSlaStages');
-  chartInstances['chartSlaStages'] = new Chart(document.getElementById('chartSlaStages'), {
+  destroyChart('chartSlaStagesInquiry');
+  chartInstances['chartSlaStagesInquiry'] = new Chart(document.getElementById('chartSlaStagesInquiry'), {
     type: 'pie',
     data: {
       labels: orderedStages,
