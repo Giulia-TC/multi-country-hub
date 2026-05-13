@@ -87,7 +87,7 @@ tr:hover{background:#FAFBFC}
 .badge-inquiry{background:#BEE3F8;color:#2A4365}
 .badge-lost{background:#FED7D7;color:#742A2A}
 .badge-postponed{background:#FEFCBF;color:#744210}
-.badge-negotiating{background:#EF4444;color:#fff}
+.badge-negotiating{background:#F97316;color:#fff}
 .badge-proposal{background:#F59E0B;color:#fff}
 .badge-newlead{background:#9CA3AF;color:#fff}
 .badge-firstcontact{background:#3B82F6;color:#fff}
@@ -1507,7 +1507,7 @@ function renderSLA() {
   const STAGE_ORDER = ['No Stage', 'New Lead', 'First Contact', 'Proposal Sent', 'Negotiating', 'Nearing Close'];
   const STAGE_COLORS = {
     'No Stage':'#B8BDC7','New Lead':'#9CA3AF','First Contact':'#3B82F6',
-    'Proposal Sent':'#F59E0B','Negotiating':'#EF4444','Nearing Close':'#22C55E'
+    'Proposal Sent':'#F59E0B','Negotiating':'#F97316','Nearing Close':'#22C55E'
   };
   // Use the defined order, then append any other stages found in data
   const orderedStages = [...STAGE_ORDER, ...Object.keys(stageCounts).filter(s => !STAGE_ORDER.includes(s))]
