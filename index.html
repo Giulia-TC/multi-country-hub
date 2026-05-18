@@ -1113,7 +1113,7 @@ function renderTracker() {
 
   // Group by client
   const groups = {};
-  const sourceData = pilotOnly ? historyData.filter(isPilot) : historyData;
+  const sourceData = pilotOnly ? comboHistoryData.filter(isPilot) : comboHistoryData;
   sourceData.forEach(r => {
     const key = r._client.toLowerCase().replace(/[^a-z]/g, '').slice(0, 20);
     if (!key) return;
