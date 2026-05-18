@@ -166,50 +166,23 @@ tr:hover{background:#FAFBFC}
 .combo-card-header .combo-client{font-weight:700;font-size:.95rem;color:#fff;flex:1}
 .combo-card-header .combo-countries{display:flex;gap:4px;flex-wrap:wrap}
 .combo-country-chip{background:rgba(197,165,114,.25);color:var(--gold);border:1px solid rgba(197,165,114,.4);padding:2px 8px;border-radius:4px;font-size:.65rem;font-weight:700;letter-spacing:.5px}
-.combo-drop-zone{margin:0 12px 0;border:2px dashed #E2E8F0;border-radius:6px;padding:8px 12px;font-size:.72rem;color:#A0AEC0;text-align:center;transition:all .2s;display:none}
-.combo-drop-zone.drag-over,.combo-card.drag-over .combo-drop-zone{display:block;border-color:var(--gold);color:var(--gold);background:rgba(197,165,114,.06)}
 .combo-trips-list{padding:8px 12px 12px}
-.combo-trip-draggable{display:flex;align-items:flex-start;gap:8px;padding:10px 8px;border-radius:6px;border:1px solid transparent;margin-bottom:6px;transition:all .15s;background:#FAFBFC;cursor:default}
-.combo-trip-draggable:last-child{margin-bottom:0}
-.combo-trip-draggable.dragging{opacity:.35;border-style:dashed}
-.combo-trip-draggable:hover{border-color:#E2E8F0;background:#fff}
-.combo-drag-handle{color:#CBD5E0;cursor:grab;font-size:1.1rem;padding-top:2px;flex-shrink:0;user-select:none;line-height:1}
-.combo-drag-handle:active{cursor:grabbing}
+.combo-trip-row-static{padding:10px 8px;border-radius:6px;border:1px solid transparent;margin-bottom:6px;background:#FAFBFC;display:flex}
+.combo-trip-row-static:last-child{margin-bottom:0}
 .combo-trip-inner{flex:1;min-width:0}
 .combo-trip-name{font-size:.8rem;color:var(--text);font-weight:500;margin-top:4px;line-height:1.3}
 .combo-trip-meta{font-size:.7rem;color:var(--text-light);margin-top:4px;display:flex;gap:8px;flex-wrap:wrap}
-.combo-trip-remove{background:none;border:none;color:#CBD5E0;cursor:pointer;font-size:1.1rem;padding:2px 5px;border-radius:4px;flex-shrink:0;line-height:1;transition:var(--transition);align-self:flex-start}
-.combo-trip-remove:hover{color:var(--red);background:#FED7D7}
 .combo-missing{padding:10px 12px;font-size:.78rem;color:var(--text-light);font-style:italic}
 .combo-orphan .combo-card-header{background:#718096}
-.combo-card .badge-confirmed{background:#2E9E6F;color:#fff}
-.combo-card .badge-inquiry{background:#4F8EF7;color:#fff}
-.combo-card .badge-lost{background:#C75B5B;color:#fff}
+.combo-card .badge-confirmed{background:#48BB78;color:#fff}
+.combo-card .badge-inquiry{background:#3B82F6;color:#fff}
+.combo-card .badge-lost{background:#E53E3E;color:#fff}
 .combo-card .badge-postponed{background:#D98E04;color:#fff}
 .combo-card .badge-cancelled{background:#6B7280;color:#fff}
-.combo-unassigned{background:var(--white);border-radius:var(--radius);border:2px dashed #E2E8F0;padding:16px;margin-bottom:20px;transition:all .2s}
-.combo-unassigned.drag-over{border-color:var(--blue);background:rgba(66,153,225,.04)}
-.combo-unassigned-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
-.combo-unassigned-header span:first-child{font-size:.85rem;font-weight:600;color:var(--navy)}
-.combo-unassigned-hint{font-size:.72rem;color:var(--text-light)}
-.combo-new-group-zone{background:transparent;border:2px dashed #CBD5E0;border-radius:var(--radius);display:flex;align-items:center;justify-content:center;min-height:100px;cursor:pointer;transition:all .2s;color:#A0AEC0;font-size:.82rem;font-weight:600}
-.combo-new-group-zone.drag-over{border-color:var(--green);background:rgba(72,187,120,.06);color:var(--green)}
-body.combo-dragging .combo-card{border-color:rgba(197,165,114,.5)}
-body.combo-dragging .combo-drop-zone{display:block !important}
-.combo-hint{position:relative;background:#F0F7FF;border:1px solid #C7D9F2;border-left:4px solid #4F8EF7;border-radius:8px;padding:14px 36px 14px 16px;margin-bottom:20px;font-size:.78rem;color:var(--text)}
-.combo-hint-title{font-weight:700;color:var(--navy);margin-bottom:6px;font-size:.82rem}
-.combo-hint-list{margin:0;padding-left:18px;line-height:1.7}
-.combo-hint-list li{margin-bottom:2px}
-.combo-hint-note{margin-top:8px;font-size:.7rem;color:var(--text-light);font-style:italic}
-.combo-hint-close{position:absolute;top:8px;right:8px;background:none;border:none;font-size:1.2rem;color:#A0AEC0;cursor:pointer;padding:0 6px;line-height:1;border-radius:4px}
-.combo-hint-close:hover{color:var(--navy);background:rgba(255,255,255,.5)}
-.combo-hint.hidden{display:none}
-.combo-reset-btn{background:none;border:1px solid #E2E8F0;color:var(--text-light);padding:5px 12px;border-radius:6px;font-size:.75rem;cursor:pointer;transition:var(--transition)}
 .notify-btn{background:#4F8EF7;color:#fff;border:none;padding:5px 10px;border-radius:5px;font-size:.7rem;font-weight:600;cursor:pointer;white-space:nowrap;transition:all .15s;display:inline-flex;align-items:center;gap:4px}
 .notify-btn:hover{background:#3B82F6;transform:translateY(-1px);box-shadow:0 2px 4px rgba(79,142,247,.3)}
 .notify-btn.no-email{background:#A0AEC0}
 .notify-btn.no-email:hover{background:#718096}
-.combo-reset-btn:hover{border-color:var(--red);color:var(--red);background:#FFF5F5}
 @media(max-width:768px){.combo-grid{grid-template-columns:1fr}}
 
 /* ===== PILOT TOGGLE ===== */
@@ -358,17 +331,6 @@ body.combo-dragging .combo-drop-zone{display:block !important}
 
     <!-- ===== COMBO GROUPS ===== -->
     <div class="page" id="page-combos">
-      <div class="combo-hint" id="comboHint">
-        <button class="combo-hint-close" onclick="dismissComboHint()" title="Hide">×</button>
-        <div class="combo-hint-title">How to organise combo groups</div>
-        <ul class="combo-hint-list">
-          <li><b>Drag</b> the <span style="font-family:monospace">⠿</span> handle on a trip to move it onto another group card</li>
-          <li>Click <b>×</b> on a trip to send it to the <i>Unassigned Trips</i> pool at the top</li>
-          <li>Drop a trip onto the <b>⊕ New Group</b> zone (bottom) to start a new group</li>
-          <li>Click <b>↺ Reset</b> to restore the original auto-grouping</li>
-        </ul>
-        <div class="combo-hint-note">Changes are saved in your browser only — they don't sync across devices or users.</div>
-      </div>
       <div class="flex-between" style="margin-bottom:20px">
         <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
           <h3 class="section-title" style="margin:0">Combo Groups — Parent + Children</h3>
@@ -379,7 +341,6 @@ body.combo-dragging .combo-drop-zone{display:block !important}
           <select id="comboFilterDMC" onchange="renderCombos()"><option value="">All DMCs</option></select>
           <select id="comboFilterStatus" onchange="renderCombos()"><option value="">All Statuses</option><option value="Confirmed">Confirmed</option><option value="Inquiry">Inquiry</option><option value="Lost">Lost</option><option value="Postponed">Postponed</option></select>
           <label class="pilot-toggle" style="background:#FFF5E6;border-color:#FBD38D" title="Show only groups missing a parent or child"><input type="checkbox" id="comboUngroupedOnly" onchange="renderCombos()"> <span>Ungrouped Only</span></label>
-          <button class="combo-reset-btn" onclick="resetComboState()" title="Reset all manual grouping changes">↺ Reset</button>
         </div>
       </div>
       <div id="comboGrid"></div>
@@ -1020,53 +981,8 @@ function renderDelivered() {
 }
 
 // ===== COMBO GROUPS =====
-// ===== COMBO DnD STATE =====
-let comboManualMap = {}; // { tripName: targetGroupId | '__unassigned__' }
-let comboCustomGroupNames = {}; // { groupId: displayName }
-let _dragTripKey = null;
-
-function loadComboState() {
-  try {
-    comboManualMap = JSON.parse(localStorage.getItem('comboManualMap') || '{}');
-    comboCustomGroupNames = JSON.parse(localStorage.getItem('comboCustomGroupNames') || '{}');
-  } catch { comboManualMap = {}; comboCustomGroupNames = {}; }
-}
-
-function saveComboState() {
-  localStorage.setItem('comboManualMap', JSON.stringify(comboManualMap));
-  localStorage.setItem('comboCustomGroupNames', JSON.stringify(comboCustomGroupNames));
-}
-
-function resetComboState() {
-  if (!confirm('Reset all manual grouping changes?')) return;
-  comboManualMap = {}; comboCustomGroupNames = {};
-  saveComboState(); renderCombos();
-}
-
-function dismissComboHint() {
-  document.getElementById('comboHint').classList.add('hidden');
-  localStorage.setItem('comboHintDismissed', '1');
-}
-// Apply persisted hint state on load
-if (localStorage.getItem('comboHintDismissed') === '1') {
-  document.addEventListener('DOMContentLoaded', () => {
-    const h = document.getElementById('comboHint');
-    if (h) h.classList.add('hidden');
-  });
-}
-
-function normGroupKey(name) {
-  return name
-    .replace(/^CT\s*(Parent|Child|CHILD|\(Parent\)|\(Child\))\s*[-–()\s:]*/i, '')
-    .replace(/\s*[-–]\s*(Spain|France|Italy|UK|Greece|Morocco|Turkey|Portugal)[^,]*/gi, '')
-    .replace(/\s*[-–]\s*\d+P\d+N.*/i, '')
-    .replace(/\s*[-–]\s*(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\w*\s*\d{4}.*/i, '')
-    .replace(/\s*x\d+$/i, '')
-    .replace(/\s+/g, ' ').trim().toLowerCase();
-}
-
 function buildComboGroups(sourceData) {
-  // Step 1: auto-group using explicit Parent Trip column (K) and Combo Role (L)
+  // Group using explicit Parent Trip column (K) and Combo Role (L) from the sheet.
   // Group key = Parent's Trip Name. Children point to it via their "Parent Trip" field.
   const allGroups = {};
   sourceData.forEach(r => {
@@ -1082,39 +998,11 @@ function buildComboGroups(sourceData) {
     if (role === 'Parent') allGroups[key].parents.push(r);
     else allGroups[key].children.push(r);
   });
-
-  // Step 2: seed any custom groups that may have no auto-match
-  Object.entries(comboCustomGroupNames).forEach(([gid, name]) => {
-    if (!allGroups[gid]) allGroups[gid] = { key: gid, displayName: name, parents: [], children: [] };
-    else if (name) allGroups[gid].displayName = name;
-  });
-
-  // Step 3: apply manual overrides (move trips between groups)
-  sourceData.forEach(r => {
-    const tKey = r['Trip: Client Name'];
-    if (!comboManualMap[tKey]) return;
-    const targetId = comboManualMap[tKey];
-    // Remove from whichever auto group this trip currently sits in (scan all groups)
-    Object.values(allGroups).forEach(g => {
-      g.parents = g.parents.filter(x => x['Trip: Client Name'] !== tKey);
-      g.children = g.children.filter(x => x['Trip: Client Name'] !== tKey);
-    });
-    if (targetId === '__unassigned__') return;
-    // Add to target group
-    if (!allGroups[targetId]) allGroups[targetId] = { key: targetId, displayName: comboCustomGroupNames[targetId] || r._client, parents: [], children: [] };
-    if (r._role === 'Parent') allGroups[targetId].parents.push(r);
-    else allGroups[targetId].children.push(r);
-  });
-
-  const groups = Object.values(allGroups).filter(g => g.parents.length || g.children.length);
-  const unassigned = sourceData.filter(r => comboManualMap[r['Trip: Client Name']] === '__unassigned__');
-  return { groups, unassigned };
+  return Object.values(allGroups).filter(g => g.parents.length || g.children.length);
 }
 
-function renderComboTripRow(r, groupId) {
-  const tKey = (r['Trip: Client Name'] || '').replace(/"/g, '&quot;');
-  return `<div class="combo-trip-draggable" draggable="true" data-trip-key="${tKey}" data-group-id="${groupId}">
-    <span class="combo-drag-handle" title="Drag to move">⠿</span>
+function renderComboTripRow(r) {
+  return `<div class="combo-trip-row-static">
     <div class="combo-trip-inner">
       <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
         ${roleBadge(r._role)}<span style="font-size:.7rem;color:var(--text-light);font-weight:600">${r._subsidiary}</span>
@@ -1127,7 +1015,6 @@ function renderComboTripRow(r, groupId) {
         ${r._salePrice ? `<span>💰 ${fmtCurrency(r._salePrice)}</span>` : ''}
       </div>
     </div>
-    <button class="combo-trip-remove" data-trip-key="${tKey}" title="Remove from group">×</button>
   </div>`;
 }
 
@@ -1135,21 +1022,19 @@ function renderComboCard(g) {
   const allCountries = [...new Set([...g.parents,...g.children].map(r => r._subsidiary))];
   const totalRev = [...g.parents,...g.children].filter(r=>r['Status']==='Confirmed').reduce((s,r)=>s+r._salePrice,0);
   const allTrips = [...g.parents,...g.children];
-  const gKeyAttr = g.key.replace(/"/g, '&quot;');
-  return `<div class="combo-card${!g.parents.length?' combo-orphan':''}" data-group-id="${gKeyAttr}">
+  return `<div class="combo-card${!g.parents.length?' combo-orphan':''}">
     <div class="combo-card-header">
       <div style="flex:1;min-width:0">
         <div class="combo-client">${g.displayName}</div>
-        <div style="font-size:.68rem;color:rgba(255,255,255,.45);margin-top:1px">${allTrips.length} trip${allTrips.length!==1?'s':''} &bull; ${g.parents.length} parent / ${g.children.length} child</div>
+        <div style="font-size:.68rem;color:rgba(255,255,255,.55);margin-top:1px">${allTrips.length} trip${allTrips.length!==1?'s':''} &bull; ${g.parents.length} parent / ${g.children.length} child</div>
       </div>
       <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0">
         <div class="combo-countries">${allCountries.map(c=>`<span class="combo-country-chip">${c}</span>`).join('')}</div>
         ${totalRev?`<span style="font-size:.7rem;color:var(--gold);font-weight:600">${fmtCurrency(totalRev)}</span>`:''}
       </div>
     </div>
-    <div class="combo-drop-zone" data-group-id="${gKeyAttr}">Drop a trip here to add it to this group</div>
     <div class="combo-trips-list">
-      ${allTrips.length ? allTrips.map(r => renderComboTripRow(r, g.key)).join('') : '<div class="combo-missing">No trips — drop one here or click × to remove this group</div>'}
+      ${allTrips.length ? allTrips.map(r => renderComboTripRow(r)).join('') : '<div class="combo-missing">No trips in this group</div>'}
     </div>
   </div>`;
 }
@@ -1160,13 +1045,12 @@ function renderCombos() {
   const filterStatus = document.getElementById('comboFilterStatus').value;
   const ungroupedOnly = document.getElementById('comboUngroupedOnly').checked;
 
-  let { groups, unassigned } = buildComboGroups(comboHistoryData);
+  let groups = buildComboGroups(comboHistoryData);
 
   if (search) groups = groups.filter(g => g.displayName.toLowerCase().includes(search) ||
-    [...g.parents,...g.children].some(r => r['Trip: Owner Name'].toLowerCase().includes(search)));
+    [...g.parents,...g.children].some(r => (r['Trip: Owner Name'] || '').toLowerCase().includes(search)));
   if (filterDMC) groups = groups.filter(g => [...g.parents,...g.children].some(r => r._subsidiary === filterDMC));
   if (filterStatus) groups = groups.filter(g => [...g.parents,...g.children].some(r => r['Status'] === filterStatus));
-  // Ungrouped = a group missing its counterpart (parent without child, or child without parent)
   if (ungroupedOnly) groups = groups.filter(g => g.parents.length === 0 || g.children.length === 0);
 
   const order = {Confirmed:0,Inquiry:1,Negotiating:2,Postponed:3,Lost:4};
@@ -1179,103 +1063,10 @@ function renderCombos() {
   document.getElementById('comboCountLabel').textContent = groups.length + ' groups';
   document.getElementById('comboCount').textContent = groups.length;
 
-  let html = '';
-
-  // Unassigned pool
-  if (unassigned.length) {
-    html += `<div class="combo-unassigned" data-group-id="__unassigned__">
-      <div class="combo-unassigned-header">
-        <span>Unassigned Trips (${unassigned.length})</span>
-        <span class="combo-unassigned-hint">Drag onto a group card to reassign</span>
-      </div>
-      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(360px,1fr));gap:6px">
-        ${unassigned.map(r => renderComboTripRow(r, '__unassigned__')).join('')}
-      </div>
-    </div>`;
-  }
-
-  html += `<div class="combo-grid">`;
-  html += groups.length ? groups.map(renderComboCard).join('') : '<div class="empty-state" style="grid-column:1/-1">No combo groups found</div>';
-  html += `<div class="combo-new-group-zone" data-group-id="__new__">⊕ Drop a trip here to create a new group</div>`;
-  html += `</div>`;
-
+  const html = `<div class="combo-grid">${
+    groups.length ? groups.map(renderComboCard).join('') : '<div class="empty-state" style="grid-column:1/-1">No combo groups found</div>'
+  }</div>`;
   document.getElementById('comboGrid').innerHTML = html;
-  initComboDnD();
-}
-
-function initComboDnD() {
-  const container = document.getElementById('comboGrid');
-  if (!container) return;
-
-  // Counter map: tracks nested dragenter depth per element to avoid
-  // false dragleave events when moving between child elements
-  const enterCount = new Map();
-
-  function addTarget(el) {
-    enterCount.set(el, 0);
-    el.addEventListener('dragenter', e => {
-      e.preventDefault();
-      enterCount.set(el, (enterCount.get(el) || 0) + 1);
-      el.classList.add('drag-over');
-    });
-    el.addEventListener('dragleave', () => {
-      const c = (enterCount.get(el) || 1) - 1;
-      enterCount.set(el, c);
-      if (c <= 0) { enterCount.set(el, 0); el.classList.remove('drag-over'); }
-    });
-    el.addEventListener('dragover', e => { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; });
-    el.addEventListener('drop', e => {
-      e.preventDefault(); e.stopPropagation();
-      enterCount.set(el, 0); el.classList.remove('drag-over');
-      const tKey = _dragTripKey || e.dataTransfer.getData('text/plain');
-      if (!tKey) return;
-      // Resolve group ID: from the element or its nearest card ancestor
-      let gid = el.dataset.groupId || el.closest('[data-group-id]')?.dataset.groupId;
-      if (!gid) return;
-      if (gid === '__new__') {
-        gid = 'custom_' + Date.now();
-        const trip = historyData.find(r => r['Trip: Client Name'] === tKey);
-        comboCustomGroupNames[gid] = trip ? trip._client : 'New Group';
-      }
-      comboManualMap[tKey] = gid;
-      saveComboState();
-      renderCombos();
-    });
-  }
-
-  // Draggable trip rows
-  container.querySelectorAll('.combo-trip-draggable').forEach(el => {
-    el.addEventListener('dragstart', e => {
-      _dragTripKey = el.dataset.tripKey;
-      e.dataTransfer.effectAllowed = 'move';
-      e.dataTransfer.setData('text/plain', _dragTripKey);
-      setTimeout(() => el.classList.add('dragging'), 0);
-      document.body.classList.add('combo-dragging');
-    });
-    el.addEventListener('dragend', () => {
-      el.classList.remove('dragging');
-      document.body.classList.remove('combo-dragging');
-      container.querySelectorAll('.drag-over').forEach(d => d.classList.remove('drag-over'));
-      enterCount.clear();
-    });
-  });
-
-  // Register drop targets — cards (whole card), unassigned pool, new-group zone
-  // The drop zone div inside each card is NOT registered separately — the card handles it
-  container.querySelectorAll('.combo-card').forEach(addTarget);
-  const unassigned = container.querySelector('.combo-unassigned');
-  const newZone = container.querySelector('.combo-new-group-zone');
-  if (unassigned) addTarget(unassigned);
-  if (newZone) addTarget(newZone);
-
-  // Remove (×) buttons
-  container.querySelectorAll('.combo-trip-remove').forEach(btn => {
-    btn.addEventListener('click', e => {
-      e.stopPropagation();
-      comboManualMap[btn.dataset.tripKey] = '__unassigned__';
-      saveComboState(); renderCombos();
-    });
-  });
 }
 
 // ===== TRIP TRACKER =====
@@ -1885,7 +1676,6 @@ function renderFramework() {
 }
 
 // ===== INIT =====
-loadComboState();
 loadAllData();
 // Auto-refresh every 5 minutes
 setInterval(loadAllData, 5 * 60 * 1000);
