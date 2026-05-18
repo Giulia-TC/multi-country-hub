@@ -490,11 +490,13 @@ body.combo-dragging .combo-drop-zone{display:block !important}
 // ===== GLOBALS =====
 let pilotData = [];
 let historyData = [];
+let comboHistoryData = []; // All-time multi-country leads (separate sheet)
 let complianceData = {};
 let advisorEmails = {}; // { "Owner Name": "owner@email.com" }
 let chartInstances = {};
 
 const ADVISOR_EMAILS_GID = '1340424908';
+const COMBO_LEADS_URL = 'https://docs.google.com/spreadsheets/d/1RNSRVA90oBdLJK7FX6zzhWupW9jgnKElU5vL8YnMOl0/gviz/tq?tqx=out:csv&gid=0';
 
 const COMPLIANCE_TABS = [
   { name: 'Parent & Child | Leads', gid: '1577212936', icon: '&#128203;', color: '#4299E1', desc: 'Pilot trips from Mar 9' },
@@ -584,10 +586,11 @@ async function loadAllData() {
   const pilotUrl = document.getElementById('settingsPilotUrl').value;
   const histUrl = document.getElementById('settingsHistoryUrl').value;
 
-  // Fetch main data + all 6 compliance tabs + advisor emails tab in parallel
+  // Fetch main data + all 6 compliance tabs + advisor emails tab + combo leads (all time) in parallel
   const complianceFetches = COMPLIANCE_TABS.map(tab => fetchCSV(`${PILOT_SHEET_BASE}?gid=${tab.gid}&single=true&output=csv`));
   const emailsFetch = fetchCSV(`${PILOT_SHEET_BASE}?gid=${ADVISOR_EMAILS_GID}&single=true&output=csv`);
-  const [pilotCSV, histCSV, emailsCSV, ...complianceCSVs] = await Promise.all([fetchCSV(pilotUrl), fetchCSV(histUrl), emailsFetch, ...complianceFetches]);
+  const comboFetch = fetchCSV(COMBO_LEADS_URL);
+  const [pilotCSV, histCSV, emailsCSV, comboCSV, ...complianceCSVs] = await Promise.all([fetchCSV(pilotUrl), fetchCSV(histUrl), emailsFetch, comboFetch, ...complianceFetches]);
 
   // Build advisor email lookup map
   advisorEmails = {};
@@ -604,6 +607,7 @@ async function loadAllData() {
 
   if (pilotCSV) pilotData = parseCSV(pilotCSV);
   if (histCSV) historyData = parseCSV(histCSV);
+  if (comboCSV) comboHistoryData = parseCSV(comboCSV);
 
   // Parse compliance tabs
   COMPLIANCE_TABS.forEach((tab, i) => {
@@ -613,6 +617,7 @@ async function loadAllData() {
   // Enrich data
   historyData.forEach(enrichRow);
   pilotData.forEach(enrichRow);
+  comboHistoryData.forEach(enrichComboRow);
 
   const now = new Date().toLocaleString();
   document.getElementById('lastRefresh').textContent = `Last refresh: ${now}`;
@@ -638,6 +643,17 @@ function enrichRow(row) {
   row._salePrice = parseFloat((row['Sale Price'] || '0').replace(/,/g, '')) || 0;
   row._status = row['Status'] || row['Lead Stage'] || 'Unknown';
   row._subsidiary = row['Subsidiary'] || '';
+}
+
+// Enrichment for the new combo leads sheet (uses explicit Combo Role + Parent Trip columns)
+function enrichComboRow(row) {
+  const explicitRole = (row['Combo Role'] || '').trim();
+  row._role = (explicitRole === 'Parent' || explicitRole === 'Child') ? explicitRole : 'Child';
+  row._client = (row['Trip: Client Name'] || '').trim();
+  row._salePrice = parseFloat((row['Sale Price'] || '0').replace(/,/g, '')) || 0;
+  row._status = row['Status'] || row['Lead Stage'] || 'Unknown';
+  row._subsidiary = (row['Subsidiary'] || '').trim();
+  row._parentTrip = (row['Parent Trip'] || '').trim();
 }
 
 // ===== HELPERS =====
@@ -778,8 +794,11 @@ function populateFilters() {
     sel.value = val;
   }
 
-  ['pipelineFilterDMC','activeFilterDMC','deliveredFilterDMC','comboFilterDMC'].forEach(id =>
+  ['pipelineFilterDMC','activeFilterDMC','deliveredFilterDMC'].forEach(id =>
     fillSelect(id, 'All DMCs', dmcs.map(d => ({value: d, label: d}))));
+  // Combo Groups DMC list is drawn from the all-time combo leads sheet
+  const comboDmcs = [...new Set(comboHistoryData.map(r => r._subsidiary))].filter(Boolean).sort();
+  fillSelect('comboFilterDMC', 'All DMCs', comboDmcs.map(d => ({value: d, label: d})));
   ['pipelineFilterOwner','activeFilterOwner','deliveredFilterOwner'].forEach(id =>
     fillSelect(id, 'All Owners', owners.map(o => ({value: o, label: o}))));
   ['pipelineFilterCreated','activeFilterCreated','deliveredFilterCreated'].forEach(id =>
@@ -1048,13 +1067,20 @@ function normGroupKey(name) {
 }
 
 function buildComboGroups(sourceData) {
-  // Step 1: auto-group by normalised name
+  // Step 1: auto-group using explicit Parent Trip column (K) and Combo Role (L)
+  // Group key = Parent's Trip Name. Children point to it via their "Parent Trip" field.
   const allGroups = {};
   sourceData.forEach(r => {
-    const key = normGroupKey(r['Trip: Client Name'] || '');
+    const ownName = (r['Trip: Client Name'] || '').trim();
+    const parentTrip = (r['Parent Trip'] || r._parentTrip || '').trim();
+    const role = r._role;
+    let key;
+    if (role === 'Parent') key = ownName;
+    else if (parentTrip) key = parentTrip;
+    else key = ownName; // child with no parent reference — orphan, its own group
     if (!key) return;
-    if (!allGroups[key]) allGroups[key] = { key, displayName: r._client, parents: [], children: [] };
-    if (r._role === 'Parent') allGroups[key].parents.push(r);
+    if (!allGroups[key]) allGroups[key] = { key, displayName: key, parents: [], children: [] };
+    if (role === 'Parent') allGroups[key].parents.push(r);
     else allGroups[key].children.push(r);
   });
 
@@ -1069,12 +1095,11 @@ function buildComboGroups(sourceData) {
     const tKey = r['Trip: Client Name'];
     if (!comboManualMap[tKey]) return;
     const targetId = comboManualMap[tKey];
-    const autoKey = normGroupKey(tKey);
-    // Remove from auto group
-    if (allGroups[autoKey]) {
-      allGroups[autoKey].parents = allGroups[autoKey].parents.filter(x => x['Trip: Client Name'] !== tKey);
-      allGroups[autoKey].children = allGroups[autoKey].children.filter(x => x['Trip: Client Name'] !== tKey);
-    }
+    // Remove from whichever auto group this trip currently sits in (scan all groups)
+    Object.values(allGroups).forEach(g => {
+      g.parents = g.parents.filter(x => x['Trip: Client Name'] !== tKey);
+      g.children = g.children.filter(x => x['Trip: Client Name'] !== tKey);
+    });
     if (targetId === '__unassigned__') return;
     // Add to target group
     if (!allGroups[targetId]) allGroups[targetId] = { key: targetId, displayName: comboCustomGroupNames[targetId] || r._client, parents: [], children: [] };
@@ -1137,7 +1162,7 @@ function renderCombos() {
   const pilotOnly = document.getElementById('comboPilotOnly').checked;
   const ungroupedOnly = document.getElementById('comboUngroupedOnly').checked;
 
-  const source = pilotOnly ? historyData.filter(isPilot) : historyData;
+  const source = pilotOnly ? comboHistoryData.filter(isPilot) : comboHistoryData;
   let { groups, unassigned } = buildComboGroups(source);
 
   if (search) groups = groups.filter(g => g.displayName.toLowerCase().includes(search) ||
