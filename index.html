@@ -784,11 +784,12 @@ function monthKey(dateStr) {
 
 // ===== DASHBOARD =====
 function renderDashboard() {
-  const data = historyData;
+  const data = comboHistoryData;
   const totalTrips = data.length;
-  const uniqueClients = new Set(data.map(r => r._client.toLowerCase())).size;
   const confirmed = data.filter(r => r['Status'] === 'Confirmed');
-  const totalRevenue = confirmed.reduce((s, r) => s + r._salePrice, 0);
+  const confirmedParents = confirmed.filter(r => r._role === 'Parent');
+  // Total revenue = sum of confirmed PARENT trips only (parent revenue already includes child portions)
+  const totalRevenue = confirmedParents.reduce((s, r) => s + r._salePrice, 0);
   const parents = data.filter(r => r._role === 'Parent');
   const pipeline = data.filter(r => r['Status'] === 'Inquiry');
   const lost = data.filter(r => r['Status'] === 'Lost');
@@ -798,8 +799,7 @@ function renderDashboard() {
     <div class="kpi-card"><div class="kpi-label">Total Trips</div><div class="kpi-value">${totalTrips}</div><div class="kpi-sub">${parents.length} parents, ${totalTrips - parents.length} children</div></div>
     <div class="kpi-card"><div class="kpi-label">Confirmed</div><div class="kpi-value">${confirmed.length}</div><div class="kpi-sub">${convRate}% conversion rate</div></div>
     <div class="kpi-card"><div class="kpi-label">In Pipeline</div><div class="kpi-value">${pipeline.length}</div><div class="kpi-sub">Active inquiries</div></div>
-    <div class="kpi-card"><div class="kpi-label">Total Revenue</div><div class="kpi-value">${fmtCurrency(totalRevenue)}</div><div class="kpi-sub">From ${confirmed.length} confirmed trips</div></div>
-    <div class="kpi-card"><div class="kpi-label">Avg Revenue / Confirmed Trip</div><div class="kpi-value">${confirmed.length ? fmtCurrency(totalRevenue / confirmed.length) : '--'}</div><div class="kpi-sub">Per trip record</div></div>
+    <div class="kpi-card"><div class="kpi-label">Total Revenue</div><div class="kpi-value">${fmtCurrency(totalRevenue)}</div><div class="kpi-sub">From ${confirmedParents.length} confirmed parent trips</div></div>
     <div class="kpi-card"><div class="kpi-label">DMCs Involved</div><div class="kpi-value">${new Set(data.map(r => r._subsidiary)).size}</div><div class="kpi-sub">Countries active in CT</div></div>
     <div class="kpi-card"><div class="kpi-label">Lost</div><div class="kpi-value">${lost.length}</div><div class="kpi-sub">${totalTrips > 0 ? ((lost.length / totalTrips) * 100).toFixed(1) : 0}% loss rate</div></div>
   `;
@@ -863,9 +863,32 @@ function renderDashboard() {
     options: { indexAxis: 'y', responsive: true, plugins: { legend: { display: false } }, scales: { x: { beginAtZero: true, ticks: { stepSize: 1 } } } }
   });
 
-  // Revenue by DMC
+  // Revenue by DMC — net of inter-combo overlap
+  // Each combo: parent DMC gets (parent rev - sum of child revs); each child DMC gets its own rev.
+  // Only confirmed trips counted.
   const revByDmc = {};
-  confirmed.forEach(r => { revByDmc[r._subsidiary] = (revByDmc[r._subsidiary] || 0) + r._salePrice; });
+  // Build combo groups from confirmed trips
+  const comboGroups = {};
+  confirmed.forEach(r => {
+    const ownName = (r['Trip: Client Name'] || '').trim();
+    const parentTripName = (r['Parent Trip'] || r._parentTrip || '').trim();
+    const key = r._role === 'Parent' ? ownName : (parentTripName || ownName);
+    if (!key) return;
+    if (!comboGroups[key]) comboGroups[key] = { parent: null, children: [] };
+    if (r._role === 'Parent') comboGroups[key].parent = r;
+    else comboGroups[key].children.push(r);
+  });
+  Object.values(comboGroups).forEach(g => {
+    if (g.parent) {
+      const childTotal = g.children.reduce((s, c) => s + c._salePrice, 0);
+      const parentShare = g.parent._salePrice - childTotal;
+      const dmc = g.parent._subsidiary;
+      if (dmc) revByDmc[dmc] = (revByDmc[dmc] || 0) + parentShare;
+    }
+    g.children.forEach(c => {
+      if (c._subsidiary) revByDmc[c._subsidiary] = (revByDmc[c._subsidiary] || 0) + c._salePrice;
+    });
+  });
   const revLabels = Object.keys(revByDmc).sort();
   destroyChart('chartRevenue');
   chartInstances['chartRevenue'] = new Chart(document.getElementById('chartRevenue'), {
