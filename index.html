@@ -430,12 +430,12 @@ tr:hover{background:#FAFBFC}
     <div class="page" id="page-settings">
       <div class="settings-card">
         <h3>Data Sources</h3>
-        <label>Pilot Tracker CSV (from March 9)</label>
-        <input type="url" id="settingsPilotUrl" value="https://docs.google.com/spreadsheets/d/e/2PACX-1vTN0_dgp6cY1BSCyEbf4ydFuEfSKUPKuRqMz2pLTvhTP7M1SJdye79TP3qDsguqoqDkYRDGsUN0b-08/pub?output=csv">
-        <p class="note">Main data source for pilot framework monitoring (Salesforce sync)</p>
-        <label>Full History CSV (since Jan 2026)</label>
-        <input type="url" id="settingsHistoryUrl" value="https://docs.google.com/spreadsheets/d/e/2PACX-1vQoxN5ReGrSMCH6h-jxmF-z_-LOYsbOUfsczRScUAmr0RAB3UECPkyweaRpuKuXVKGpDNy2Lygo-gvd/pub?output=csv">
-        <p class="note">Full trip history for counts, revenue, and route analysis</p>
+        <label>Multi-Country Trips Leads — All Time</label>
+        <input type="url" readonly value="https://docs.google.com/spreadsheets/d/1RNSRVA90oBdLJK7FX6zzhWupW9jgnKElU5vL8YnMOl0/" style="background:#F7FAFC;color:var(--text-light)">
+        <p class="note">Source of truth for trips, combo grouping, revenue, and analytics.</p>
+        <label>Compliance Reports &amp; Advisor Emails (Salesforce sync)</label>
+        <input type="url" readonly value="https://docs.google.com/spreadsheets/d/e/2PACX-1vTN0_dgp6cY1BSCyEbf4ydFuEfSKUPKuRqMz2pLTvhTP7M1SJdye79TP3qDsguqoqDkYRDGsUN0b-08/pub?output=csv" style="background:#F7FAFC;color:var(--text-light)">
+        <p class="note">SF Compliance tabs and the advisor name → email map for the Notify Owner buttons.</p>
         <button class="refresh-btn" onclick="loadAllData()" style="margin-top:8px">&#8635; Reload Data Now</button>
       </div>
       <div class="settings-card">
@@ -449,9 +449,7 @@ tr:hover{background:#FAFBFC}
 
 <script>
 // ===== GLOBALS =====
-let pilotData = [];
-let historyData = [];
-let comboHistoryData = []; // All-time multi-country leads (separate sheet)
+let comboHistoryData = []; // All-time multi-country leads (sole trip data source)
 let complianceData = {};
 let advisorEmails = {}; // { "Owner Name": "owner@email.com" }
 let chartInstances = {};
@@ -544,14 +542,11 @@ async function loadAllData() {
   btn.classList.add('loading');
   btn.innerHTML = '&#8635; Loading...';
 
-  const pilotUrl = document.getElementById('settingsPilotUrl').value;
-  const histUrl = document.getElementById('settingsHistoryUrl').value;
-
-  // Fetch main data + all 6 compliance tabs + advisor emails tab + combo leads (all time) in parallel
+  // Fetch combo leads (sole trip source) + advisor emails tab + all 6 compliance tabs in parallel
   const complianceFetches = COMPLIANCE_TABS.map(tab => fetchCSV(`${PILOT_SHEET_BASE}?gid=${tab.gid}&single=true&output=csv`));
   const emailsFetch = fetchCSV(`${PILOT_SHEET_BASE}?gid=${ADVISOR_EMAILS_GID}&single=true&output=csv`);
   const comboFetch = fetchCSV(COMBO_LEADS_URL);
-  const [pilotCSV, histCSV, emailsCSV, comboCSV, ...complianceCSVs] = await Promise.all([fetchCSV(pilotUrl), fetchCSV(histUrl), emailsFetch, comboFetch, ...complianceFetches]);
+  const [comboCSV, emailsCSV, ...complianceCSVs] = await Promise.all([comboFetch, emailsFetch, ...complianceFetches]);
 
   // Build advisor email lookup map
   advisorEmails = {};
@@ -566,8 +561,6 @@ async function loadAllData() {
     });
   }
 
-  if (pilotCSV) pilotData = parseCSV(pilotCSV);
-  if (histCSV) historyData = parseCSV(histCSV);
   if (comboCSV) comboHistoryData = parseCSV(comboCSV);
 
   // Parse compliance tabs
@@ -576,8 +569,6 @@ async function loadAllData() {
   });
 
   // Enrich data
-  historyData.forEach(enrichRow);
-  pilotData.forEach(enrichRow);
   comboHistoryData.forEach(enrichComboRow);
 
   const now = new Date().toLocaleString();
@@ -591,22 +582,7 @@ async function loadAllData() {
   renderAll();
 }
 
-function enrichRow(row) {
-  const name = row['Trip: Client Name'] || '';
-  row._role = /parent/i.test(name) ? 'Parent' : 'Child';
-  // Extract client name: remove CT Parent/Child prefix and clean up
-  row._client = name.replace(/^CT\s*(Parent|Child|CHILD|\(Parent\)|\(Child\))\s*[-:]?\s*/i, '')
-    .replace(/\s*-\s*(Spain|France|Italy|UK|Greece|Morocco|Turkey|Portugal).*$/i, '')
-    .replace(/\s*-\s*\d+P\d+N.*$/i, '')
-    .replace(/\s*-\s*(January|February|March|April|May|June|July|August|September|October|November|December)\s*\d{4}.*$/i, '')
-    .replace(/\s*x\d+$/i, '')
-    .trim();
-  row._salePrice = parseFloat((row['Sale Price'] || '0').replace(/,/g, '')) || 0;
-  row._status = row['Status'] || row['Lead Stage'] || 'Unknown';
-  row._subsidiary = row['Subsidiary'] || '';
-}
-
-// Enrichment for the new combo leads sheet (uses explicit Combo Role + Parent Trip columns)
+// Enrichment for the combo leads sheet (uses explicit Combo Role + Parent Trip columns)
 function enrichComboRow(row) {
   const explicitRole = (row['Combo Role'] || '').trim();
   row._role = (explicitRole === 'Parent' || explicitRole === 'Child') ? explicitRole : 'Child';
