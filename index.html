@@ -1295,41 +1295,47 @@ function renderFinancial() {
 
 // ===== COUNTRIES & ROUTES =====
 function renderRoutes() {
-  // Group trips by client to find country combos
-  const clientGroups = {};
-  historyData.forEach(r => {
-    const key = r._client.toLowerCase().replace(/[^a-z]/g, '').slice(0, 20);
+  const data = comboHistoryData;
+
+  // Group trips into combos using the explicit Parent Trip (K) column.
+  // Each value in comboGroups is a Set of countries involved in that combo.
+  const comboGroups = {};
+  data.forEach(r => {
+    const ownName = (r['Trip: Client Name'] || '').trim();
+    const parentTrip = (r['Parent Trip'] || r._parentTrip || '').trim();
+    const key = r._role === 'Parent' ? ownName : (parentTrip || ownName);
     if (!key) return;
-    if (!clientGroups[key]) clientGroups[key] = new Set();
-    clientGroups[key].add(r._subsidiary);
+    if (!comboGroups[key]) comboGroups[key] = new Set();
+    if (r._subsidiary) comboGroups[key].add(r._subsidiary);
   });
 
-  // Count routes
+  // Count routes (combos that span 2+ countries)
   const routeCounts = {};
-  Object.values(clientGroups).forEach(countries => {
+  Object.values(comboGroups).forEach(countries => {
+    if (countries.size < 2) return;
     const sorted = [...countries].sort().join(' + ');
-    if (sorted.includes('+')) routeCounts[sorted] = (routeCounts[sorted] || 0) + 1;
+    routeCounts[sorted] = (routeCounts[sorted] || 0) + 1;
   });
   const topRoutes = Object.entries(routeCounts).sort((a, b) => b[1] - a[1]);
 
   document.getElementById('routeGrid').innerHTML = topRoutes.slice(0, 8).map(([route, count]) => `
-    <div class="route-card"><div class="route">${route}</div><div class="route-count">${count}</div><div class="route-label">trip groups</div></div>
+    <div class="route-card"><div class="route">${route}</div><div class="route-count">${count}</div><div class="route-label">combo${count !== 1 ? 's' : ''}</div></div>
   `).join('') || '<div class="empty-state">No multi-country routes found</div>';
 
-  // Country involvement
-  const involvement = countBy(historyData, '_subsidiary');
-  const involvementLabels = Object.keys(involvement);
+  // Country involvement — count of trip records per DMC across the all-time leads sheet
+  const involvement = countBy(data, '_subsidiary');
+  const involvementLabels = Object.keys(involvement).filter(l => l).sort();
   destroyChart('chartCountryInvolvement');
   chartInstances['chartCountryInvolvement'] = new Chart(document.getElementById('chartCountryInvolvement'), {
     type: 'polarArea',
-    data: { labels: involvementLabels, datasets: [{ data: Object.values(involvement), backgroundColor: colorsForCountries(involvementLabels).map(c => c + 'CC') }] },
+    data: { labels: involvementLabels, datasets: [{ data: involvementLabels.map(l => involvement[l]), backgroundColor: colorsForCountries(involvementLabels).map(c => c + 'CC') }] },
     options: { responsive: true, plugins: { legend: { position: 'bottom' } } }
   });
 
-  // Heatmap
-  const allCountries = [...new Set(historyData.map(r => r._subsidiary))].filter(Boolean).sort();
+  // Heatmap — count of combos containing each country pair
+  const allCountries = [...new Set(data.map(r => r._subsidiary))].filter(Boolean).sort();
   const pairCounts = {};
-  Object.values(clientGroups).forEach(countries => {
+  Object.values(comboGroups).forEach(countries => {
     const arr = [...countries].sort();
     for (let i = 0; i < arr.length; i++) {
       for (let j = i + 1; j < arr.length; j++) {
