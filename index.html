@@ -1238,20 +1238,20 @@ function renderDMC() {
 
 // ===== FINANCIAL =====
 function renderFinancial() {
-  const confirmed = historyData.filter(r => r['Status'] === 'Confirmed');
-  const totalRev = confirmed.reduce((s, r) => s + r._salePrice, 0);
-  const parentRev = confirmed.filter(r => r._role === 'Parent').reduce((s, r) => s + r._salePrice, 0);
-  const childRev = confirmed.filter(r => r._role === 'Child').reduce((s, r) => s + r._salePrice, 0);
-  const avgDeal = confirmed.length ? totalRev / confirmed.length : 0;
+  const data = comboHistoryData;
+  const confirmed = data.filter(r => r['Status'] === 'Confirmed');
+  const confirmedParents = confirmed.filter(r => r._role === 'Parent');
+  // Total revenue = sum of confirmed PARENT trips only (parent rev already includes child portions)
+  const totalRev = confirmedParents.reduce((s, r) => s + r._salePrice, 0);
+  const avgCombo = confirmedParents.length ? totalRev / confirmedParents.length : 0;
 
   document.getElementById('finKpis').innerHTML = `
-    <div class="kpi-card"><div class="kpi-label">Total Revenue</div><div class="kpi-value">${fmtCurrency(totalRev)}</div><div class="kpi-sub">${confirmed.length} confirmed trips</div></div>
-    <div class="kpi-card"><div class="kpi-label">Avg Revenue / Trip</div><div class="kpi-value">${fmtCurrency(avgDeal)}</div><div class="kpi-sub">Across all confirmed</div></div>
+    <div class="kpi-card"><div class="kpi-label">Total Revenue</div><div class="kpi-value">${fmtCurrency(totalRev)}</div><div class="kpi-sub">${confirmedParents.length} confirmed parent trips</div></div>
+    <div class="kpi-card"><div class="kpi-label">Avg Revenue / Combo</div><div class="kpi-value">${fmtCurrency(avgCombo)}</div><div class="kpi-sub">Per confirmed parent trip</div></div>
   `;
 
-  // Revenue by DMC
-  const revByDmc = {};
-  confirmed.forEach(r => { revByDmc[r._subsidiary] = (revByDmc[r._subsidiary] || 0) + r._salePrice; });
+  // Revenue by DMC — netted using shared helper
+  const revByDmc = calcNetRevenueByDmc(data);
   const sortedDmc = Object.entries(revByDmc).sort((a, b) => a[0].localeCompare(b[0]));
   destroyChart('chartFinDmc');
   chartInstances['chartFinDmc'] = new Chart(document.getElementById('chartFinDmc'), {
@@ -1260,23 +1260,24 @@ function renderFinancial() {
     options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { callback: v => '$' + v.toLocaleString() } } } }
   });
 
-  // Revenue by month
+  // Revenue by month — parent-only (so child portions aren't double-counted)
   const revByMonth = {};
-  confirmed.forEach(r => {
+  confirmedParents.forEach(r => {
     const d = parseDate(r['Sale Date']);
     if (d && !isNaN(d)) {
       const key = d.toLocaleDateString('en-US', { year: 'numeric', month: 'short' });
       revByMonth[key] = (revByMonth[key] || 0) + r._salePrice;
     }
   });
+  const monthKeys = Object.keys(revByMonth).sort((a, b) => new Date(a) - new Date(b));
   destroyChart('chartFinMonth');
   chartInstances['chartFinMonth'] = new Chart(document.getElementById('chartFinMonth'), {
     type: 'bar',
-    data: { labels: Object.keys(revByMonth), datasets: [{ label: 'Revenue', data: Object.values(revByMonth), backgroundColor: '#5b86a0' }] },
+    data: { labels: monthKeys, datasets: [{ label: 'Revenue', data: monthKeys.map(k => revByMonth[k]), backgroundColor: '#5b86a0' }] },
     options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { callback: v => '$' + v.toLocaleString() } } } }
   });
 
-  // Table
+  // Table — show all confirmed trips (parents + children) sorted by revenue desc
   const sorted = [...confirmed].sort((a, b) => b._salePrice - a._salePrice);
   const table = document.getElementById('finTable');
   table.querySelector('thead').innerHTML = '<tr><th>Role</th><th>Trip</th><th>DMC</th><th>Sale Date</th><th>Start</th><th>End</th><th>Revenue</th><th>Owner</th></tr>';
