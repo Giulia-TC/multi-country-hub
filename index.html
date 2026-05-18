@@ -716,25 +716,25 @@ function renderAll() {
 }
 
 function updateBadges() {
-  const pipeline = historyData.filter(r => r['Status'] === 'Inquiry');
+  const pipeline = comboHistoryData.filter(r => r['Status'] === 'Inquiry');
   document.getElementById('pipelineCount').textContent = pipeline.length;
   const today = new Date(); today.setHours(0,0,0,0);
-  const active = historyData.filter(r => r['Status'] === 'Confirmed');
+  const active = comboHistoryData.filter(r => r['Status'] === 'Confirmed');
   document.getElementById('activeCount').textContent = active.length;
-  const delivered = historyData.filter(r => { if (r['Status'] !== 'Confirmed') return false; const d = parseDate(r['Trip End Date']); return d && !isNaN(d) && d < today; });
+  const delivered = comboHistoryData.filter(r => { if (r['Status'] !== 'Confirmed') return false; const d = parseDate(r['Trip End Date']); return d && !isNaN(d) && d < today; });
   document.getElementById('deliveredCount').textContent = delivered.length;
 }
 
 // ===== POPULATE FILTERS =====
 function populateFilters() {
-  const dmcs = [...new Set(historyData.map(r => r._subsidiary))].filter(Boolean).sort();
-  const stages = [...new Set(historyData.map(r => r['Lead Stage']).filter(Boolean))].sort();
-  const owners = [...new Set(historyData.map(r => r['Trip: Owner Name']).filter(Boolean))].sort();
+  const dmcs = [...new Set(comboHistoryData.map(r => r._subsidiary))].filter(Boolean).sort();
+  const stages = [...new Set(comboHistoryData.map(r => r['Lead Stage']).filter(Boolean))].sort();
+  const owners = [...new Set(comboHistoryData.map(r => r['Trip: Owner Name']).filter(Boolean))].sort();
 
   // Build month list (YYYY-MM) from both created and start dates, sorted chronologically
   function monthsFrom(field) {
     const set = new Set();
-    historyData.forEach(r => {
+    comboHistoryData.forEach(r => {
       const d = parseDate(r[field]);
       if (d && !isNaN(d)) set.add(d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0'));
     });
@@ -920,7 +920,7 @@ function renderPipeline() {
   const filterRole = document.getElementById('pipelineFilterRole').value;
   const pilotOnly = document.getElementById('pipelinePilotOnly').checked;
 
-  let data = historyData.filter(r => r['Status'] === 'Inquiry');
+  let data = comboHistoryData.filter(r => r['Status'] === 'Inquiry');
   if (pilotOnly) data = data.filter(isPilot);
   if (search) data = data.filter(r => (r['Trip: Client Name'] + r['Trip: Owner Name']).toLowerCase().includes(search));
   if (filterDMC) data = data.filter(r => r._subsidiary === filterDMC);
@@ -954,7 +954,7 @@ function renderActive() {
   const filterStart = document.getElementById('activeFilterStart').value;
   const pilotOnly = document.getElementById('activePilotOnly').checked;
 
-  let data = historyData.filter(r => r['Status'] === 'Confirmed');
+  let data = comboHistoryData.filter(r => r['Status'] === 'Confirmed');
   if (pilotOnly) data = data.filter(isPilot);
   if (search) data = data.filter(r => (r['Trip: Client Name'] + r['Trip: Owner Name']).toLowerCase().includes(search));
   if (filterDMC) data = data.filter(r => r._subsidiary === filterDMC);
@@ -987,7 +987,7 @@ function renderDelivered() {
   const pilotOnly = document.getElementById('deliveredPilotOnly').checked;
   const today = new Date(); today.setHours(0,0,0,0);
 
-  let data = historyData.filter(r => {
+  let data = comboHistoryData.filter(r => {
     if (r['Status'] !== 'Confirmed') return false;
     const d = parseDate(r['Trip End Date']);
     return d && !isNaN(d) && d < today;
