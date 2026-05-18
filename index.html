@@ -282,11 +282,11 @@ tr:hover{background:#FAFBFC}
             <input type="text" id="pipelineSearch" placeholder="Search client or advisor..." oninput="renderPipeline()">
             <select id="pipelineFilterDMC" onchange="renderPipeline()"><option value="">All DMCs</option></select>
             <select id="pipelineFilterOwner" onchange="renderPipeline()"><option value="">All Owners</option></select>
+            <select id="pipelineFilterCombo" onchange="renderPipeline()"><option value="">All Combo Groups</option></select>
             <select id="pipelineFilterCreated" onchange="renderPipeline()"><option value="">Any Created Month</option></select>
             <select id="pipelineFilterStart" onchange="renderPipeline()"><option value="">Any Start Month</option></select>
             <select id="pipelineFilterStage" onchange="renderPipeline()"><option value="">All Stages</option></select>
             <select id="pipelineFilterRole" onchange="renderPipeline()"><option value="">All Roles</option><option value="Parent">Parent</option><option value="Child">Child</option></select>
-            <label class="pilot-toggle"><input type="checkbox" id="pipelinePilotOnly" onchange="renderPipeline()"> <span>Pilot Only</span></label>
           </div>
         </div>
         <div class="table-wrap"><table id="pipelineTable"><thead></thead><tbody></tbody></table></div>
@@ -749,6 +749,18 @@ function populateFilters() {
     fillSelect(id, 'Any Start Month', startMonths.map(m => ({value: m, label: fmtMonth(m)}))));
 
   fillSelect('pipelineFilterStage', 'All Stages', stages.map(s => ({value: s, label: s})));
+
+  // Pipeline combo-group dropdown — distinct combo groups that have at least one Inquiry trip
+  const pipelineComboGroups = [...new Set(comboHistoryData
+    .filter(r => r['Status'] === 'Inquiry')
+    .map(r => {
+      const ownName = (r['Trip: Client Name'] || '').trim();
+      const parentTrip = (r['Parent Trip'] || r._parentTrip || '').trim();
+      return r._role === 'Parent' ? ownName : (parentTrip || ownName);
+    })
+    .filter(Boolean)
+  )].sort();
+  fillSelect('pipelineFilterCombo', 'All Combo Groups', pipelineComboGroups.map(g => ({value: g, label: g})));
 }
 
 function monthKey(dateStr) {
@@ -888,17 +900,23 @@ function renderPipeline() {
   const search = (document.getElementById('pipelineSearch').value || '').toLowerCase();
   const filterDMC = document.getElementById('pipelineFilterDMC').value;
   const filterOwner = document.getElementById('pipelineFilterOwner').value;
+  const filterCombo = document.getElementById('pipelineFilterCombo').value;
   const filterCreated = document.getElementById('pipelineFilterCreated').value;
   const filterStart = document.getElementById('pipelineFilterStart').value;
   const filterStage = document.getElementById('pipelineFilterStage').value;
   const filterRole = document.getElementById('pipelineFilterRole').value;
-  const pilotOnly = document.getElementById('pipelinePilotOnly').checked;
 
   let data = comboHistoryData.filter(r => r['Status'] === 'Inquiry');
-  if (pilotOnly) data = data.filter(isPilot);
   if (search) data = data.filter(r => (r['Trip: Client Name'] + r['Trip: Owner Name']).toLowerCase().includes(search));
   if (filterDMC) data = data.filter(r => r._subsidiary === filterDMC);
   if (filterOwner) data = data.filter(r => r['Trip: Owner Name'] === filterOwner);
+  if (filterCombo) data = data.filter(r => {
+    // A trip belongs to a combo group named X if: (it's a Parent and its own name is X) OR (its Parent Trip is X)
+    const ownName = (r['Trip: Client Name'] || '').trim();
+    const parentTrip = (r['Parent Trip'] || r._parentTrip || '').trim();
+    const groupKey = r._role === 'Parent' ? ownName : (parentTrip || ownName);
+    return groupKey === filterCombo;
+  });
   if (filterCreated) data = data.filter(r => monthKey(r['Trip: Created Date']) === filterCreated);
   if (filterStart) data = data.filter(r => monthKey(r['Trip Start Date']) === filterStart);
   if (filterStage) data = data.filter(r => r['Lead Stage'] === filterStage);
