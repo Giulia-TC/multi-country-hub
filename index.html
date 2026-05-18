@@ -179,10 +179,6 @@ tr:hover{background:#FAFBFC}
 .combo-card .badge-lost{background:#E53E3E;color:#fff}
 .combo-card .badge-postponed{background:#D98E04;color:#fff}
 .combo-card .badge-cancelled{background:#6B7280;color:#fff}
-.notify-btn{background:#4F8EF7;color:#fff;border:none;padding:5px 10px;border-radius:5px;font-size:.7rem;font-weight:600;cursor:pointer;white-space:nowrap;transition:all .15s;display:inline-flex;align-items:center;gap:4px}
-.notify-btn:hover{background:#3B82F6;transform:translateY(-1px);box-shadow:0 2px 4px rgba(79,142,247,.3)}
-.notify-btn.no-email{background:#A0AEC0}
-.notify-btn.no-email:hover{background:#718096}
 @media(max-width:768px){.combo-grid{grid-template-columns:1fr}}
 
 /* ===== PILOT TOGGLE ===== */
@@ -433,9 +429,9 @@ tr:hover{background:#FAFBFC}
         <label>Multi-Country Trips Leads — All Time</label>
         <input type="url" readonly value="https://docs.google.com/spreadsheets/d/1RNSRVA90oBdLJK7FX6zzhWupW9jgnKElU5vL8YnMOl0/" style="background:#F7FAFC;color:var(--text-light)">
         <p class="note">Source of truth for trips, combo grouping, revenue, and analytics.</p>
-        <label>Compliance Reports &amp; Advisor Emails (Salesforce sync)</label>
+        <label>Compliance Reports (Salesforce sync)</label>
         <input type="url" readonly value="https://docs.google.com/spreadsheets/d/e/2PACX-1vTN0_dgp6cY1BSCyEbf4ydFuEfSKUPKuRqMz2pLTvhTP7M1SJdye79TP3qDsguqoqDkYRDGsUN0b-08/pub?output=csv" style="background:#F7FAFC;color:var(--text-light)">
-        <p class="note">SF Compliance tabs and the advisor name → email map for the Notify Owner buttons.</p>
+        <p class="note">SF Compliance reports for the dashboard's Compliance section.</p>
         <button class="refresh-btn" onclick="loadAllData()" style="margin-top:8px">&#8635; Reload Data Now</button>
       </div>
       <div class="settings-card">
@@ -451,10 +447,8 @@ tr:hover{background:#FAFBFC}
 // ===== GLOBALS =====
 let comboHistoryData = []; // All-time multi-country leads (sole trip data source)
 let complianceData = {};
-let advisorEmails = {}; // { "Owner Name": "owner@email.com" }
 let chartInstances = {};
 
-const ADVISOR_EMAILS_GID = '1340424908';
 const COMBO_LEADS_URL = 'https://docs.google.com/spreadsheets/d/1RNSRVA90oBdLJK7FX6zzhWupW9jgnKElU5vL8YnMOl0/gviz/tq?tqx=out:csv&gid=0';
 
 const COMPLIANCE_TABS = [
@@ -540,24 +534,10 @@ async function loadAllData() {
   btn.classList.add('loading');
   btn.innerHTML = '&#8635; Loading...';
 
-  // Fetch combo leads (sole trip source) + advisor emails tab + all 6 compliance tabs in parallel
+  // Fetch combo leads (sole trip source) + all compliance tabs in parallel
   const complianceFetches = COMPLIANCE_TABS.map(tab => fetchCSV(`${PILOT_SHEET_BASE}?gid=${tab.gid}&single=true&output=csv`));
-  const emailsFetch = fetchCSV(`${PILOT_SHEET_BASE}?gid=${ADVISOR_EMAILS_GID}&single=true&output=csv`);
   const comboFetch = fetchCSV(COMBO_LEADS_URL);
-  const [comboCSV, emailsCSV, ...complianceCSVs] = await Promise.all([comboFetch, emailsFetch, ...complianceFetches]);
-
-  // Build advisor email lookup map
-  advisorEmails = {};
-  if (emailsCSV) {
-    parseCSV(emailsCSV).forEach(row => {
-      const keys = Object.keys(row);
-      const nameKey = keys.find(k => /name/i.test(k)) || keys[0];
-      const emailKey = keys.find(k => /email/i.test(k)) || keys[1];
-      const name = (row[nameKey] || '').trim();
-      const email = (row[emailKey] || '').trim();
-      if (name && email) advisorEmails[name] = email;
-    });
-  }
+  const [comboCSV, ...complianceCSVs] = await Promise.all([comboFetch, ...complianceFetches]);
 
   if (comboCSV) comboHistoryData = parseCSV(comboCSV);
 
@@ -1486,42 +1466,6 @@ function calcAvgLeadTime(data) {
 let selectedComplianceTab = null;
 let complianceFilters = {}; // { gid: { _search: '', columnName: 'value', ... } }
 
-// Email templates per compliance issue type, keyed by tab gid
-function buildComplianceEmail(tab, row) {
-  const ownerName = row['Trip: Owner Name'] || row['Owner Name'] || row['Owner'] || '';
-  const tripName = row['Trip: Client Name'] || row['Trip Name'] || row['Name'] || 'this trip';
-  const firstName = (ownerName.split(/\s+/)[0] || 'there');
-  const to = advisorEmails[ownerName] || '';
-
-  const templates = {
-    '1675583544': { // Child | Wrong Agency
-      subject: `Compliance — Wrong Agency: ${tripName}`,
-      body: `Hi ${firstName},\n\nQuick heads-up — a compliance check flagged one of your multi-country trips:\n\nTrip: ${tripName}\nIssue: For Child trips in a multi-country combo, the Agency field should be set to the Parent DMC's name (not the original travel agent).\n\nCould you please update the Agency field in Salesforce when you get a chance?\n\nReference: Multi-Country Trip Framework — Salesforce Naming\n\nThanks!`
-    },
-    '943291452': { // Child | Wrong Collection ID
-      subject: `Compliance — Wrong Collection ID: ${tripName}`,
-      body: `Hi ${firstName},\n\nQuick heads-up — a compliance check flagged one of your multi-country trips:\n\nTrip: ${tripName}\nIssue: The Collection ID on this Child trip needs correction.\n\nCould you please update the Collection ID in Salesforce when you get a chance?\n\nReference: Multi-Country Trip Framework — Salesforce Naming\n\nThanks!`
-    },
-    '364172780': { // Parent & Child Without Threads
-      subject: `Compliance — Missing Email Threads: ${tripName}`,
-      body: `Hi ${firstName},\n\nQuick heads-up — a compliance check flagged that one of your multi-country trips is missing the required email threads:\n\nTrip: ${tripName}\n\nThe framework requires two threads attached to the Salesforce record:\n  • Thread 1: Parent <> Agent (Child always in CC) — Subject: "COMBO TRIP REQUEST: [Client] - [Countries] - [Date] - [Agency]"\n  • Thread 2: Parent <> Child (internal only) — Subject: "INTERNAL COMBO TRIP REQUEST: [Client] - [Countries] - [Date] - [Agency]"\n\nCould you please attach both threads to the trip in Salesforce when you get a chance?\n\nReference: Multi-Country Trip Framework — Communication\n\nThanks!`
-    }
-  };
-  const tpl = templates[tab.gid];
-  if (!tpl) return null;
-  return { to, subject: tpl.subject, body: tpl.body, ownerName };
-}
-
-function notifyOwner(gid, rowIdx) {
-  const tab = COMPLIANCE_TABS.find(t => t.gid === gid);
-  const row = (complianceData[gid] || [])[rowIdx];
-  if (!tab || !row) return;
-  const email = buildComplianceEmail(tab, row);
-  if (!email) return;
-  const url = `mailto:${email.to}?subject=${encodeURIComponent(email.subject)}&body=${encodeURIComponent(email.body)}`;
-  window.location.href = url;
-}
-
 function selectComplianceTab(gid) {
   selectedComplianceTab = selectedComplianceTab === gid ? null : gid;
   renderCompliance();
@@ -1576,9 +1520,6 @@ function renderComplianceTable() {
   }
   const headers = Object.keys(allRows[0]);
   const filters = complianceFilters[tab.gid] || {};
-  // The 5 "problem" tabs that get a Notify Owner button
-  const ACTIONABLE_GIDS = ['1675583544', '943291452', '364172780'];
-  const isActionable = ACTIONABLE_GIDS.includes(tab.gid);
 
   // Identify columns suitable for a dropdown filter (≤ 20 unique non-empty values)
   const filterableCols = headers.filter(h => {
@@ -1622,16 +1563,8 @@ function renderComplianceTable() {
       ${filtered.length === 0
         ? '<div class="empty-state" style="padding:32px"><p>No records match the current filters</p></div>'
         : `<table>
-            <thead style="position:sticky;top:0;background:#F7FAFC;z-index:1"><tr>${headers.map(h => `<th>${h}</th>`).join('')}${isActionable ? '<th>Action</th>' : ''}</tr></thead>
-            <tbody>${filtered.map(r => {
-              const origIdx = allRows.indexOf(r);
-              const ownerName = r['Trip: Owner Name'] || r['Owner Name'] || r['Owner'] || '';
-              const hasEmail = !!advisorEmails[ownerName];
-              const btn = isActionable
-                ? `<td style="text-align:center"><button class="notify-btn${hasEmail ? '' : ' no-email'}" onclick="notifyOwner('${tab.gid}', ${origIdx})" title="${hasEmail ? 'Email ' + ownerName : 'No email mapped — recipient will be blank'}">&#128231; Notify</button></td>`
-                : '';
-              return `<tr>${headers.map(h => `<td>${r[h] || '--'}</td>`).join('')}${btn}</tr>`;
-            }).join('')}</tbody>
+            <thead style="position:sticky;top:0;background:#F7FAFC;z-index:1"><tr>${headers.map(h => `<th>${h}</th>`).join('')}</tr></thead>
+            <tbody>${filtered.map(r => `<tr>${headers.map(h => `<td>${r[h] || '--'}</td>`).join('')}</tr>`).join('')}</tbody>
           </table>`}
     </div>
   </div>`;
