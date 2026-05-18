@@ -340,6 +340,7 @@ tr:hover{background:#FAFBFC}
           <input type="text" id="comboSearch" placeholder="Search client..." oninput="renderCombos()">
           <select id="comboFilterDMC" onchange="renderCombos()"><option value="">All DMCs</option></select>
           <select id="comboFilterStatus" onchange="renderCombos()"><option value="">All Statuses</option><option value="Confirmed">Confirmed</option><option value="Inquiry">Inquiry</option><option value="Lost">Lost</option><option value="Postponed">Postponed</option></select>
+          <select id="comboFilterCreated" onchange="renderCombos()"><option value="">Any Created Month</option></select>
           <label class="pilot-toggle" style="background:#FFF5E6;border-color:#FBD38D" title="Show only groups missing a parent or child"><input type="checkbox" id="comboUngroupedOnly" onchange="renderCombos()"> <span>Ungrouped Only</span></label>
         </div>
       </div>
@@ -759,6 +760,13 @@ function populateFilters() {
   // Combo Groups DMC list is drawn from the all-time combo leads sheet
   const comboDmcs = [...new Set(comboHistoryData.map(r => r._subsidiary))].filter(Boolean).sort();
   fillSelect('comboFilterDMC', 'All DMCs', comboDmcs.map(d => ({value: d, label: d})));
+
+  // Combo Groups created-month list — from the same all-time sheet
+  const comboCreatedMonths = [...new Set(comboHistoryData.map(r => {
+    const d = parseDate(r['Trip: Created Date']);
+    return (d && !isNaN(d)) ? (d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0')) : '';
+  }).filter(Boolean))].sort();
+  fillSelect('comboFilterCreated', 'Any Created Month', comboCreatedMonths.map(m => ({value: m, label: fmtMonth(m)})));
   ['pipelineFilterOwner','activeFilterOwner','deliveredFilterOwner'].forEach(id =>
     fillSelect(id, 'All Owners', owners.map(o => ({value: o, label: o}))));
   ['pipelineFilterCreated','activeFilterCreated','deliveredFilterCreated'].forEach(id =>
@@ -1043,6 +1051,7 @@ function renderCombos() {
   const search = (document.getElementById('comboSearch').value || '').toLowerCase();
   const filterDMC = document.getElementById('comboFilterDMC').value;
   const filterStatus = document.getElementById('comboFilterStatus').value;
+  const filterCreated = document.getElementById('comboFilterCreated').value;
   const ungroupedOnly = document.getElementById('comboUngroupedOnly').checked;
 
   let groups = buildComboGroups(comboHistoryData);
@@ -1051,6 +1060,7 @@ function renderCombos() {
     [...g.parents,...g.children].some(r => (r['Trip: Owner Name'] || '').toLowerCase().includes(search)));
   if (filterDMC) groups = groups.filter(g => [...g.parents,...g.children].some(r => r._subsidiary === filterDMC));
   if (filterStatus) groups = groups.filter(g => [...g.parents,...g.children].some(r => r['Status'] === filterStatus));
+  if (filterCreated) groups = groups.filter(g => [...g.parents,...g.children].some(r => monthKey(r['Trip: Created Date']) === filterCreated));
   if (ungroupedOnly) groups = groups.filter(g => g.parents.length === 0 || g.children.length === 0);
 
   const order = {Confirmed:0,Inquiry:1,Negotiating:2,Postponed:3,Lost:4};
