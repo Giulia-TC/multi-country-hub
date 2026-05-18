@@ -378,7 +378,6 @@ body.combo-dragging .combo-drop-zone{display:block !important}
           <input type="text" id="comboSearch" placeholder="Search client..." oninput="renderCombos()">
           <select id="comboFilterDMC" onchange="renderCombos()"><option value="">All DMCs</option></select>
           <select id="comboFilterStatus" onchange="renderCombos()"><option value="">All Statuses</option><option value="Confirmed">Confirmed</option><option value="Inquiry">Inquiry</option><option value="Lost">Lost</option><option value="Postponed">Postponed</option></select>
-          <label class="pilot-toggle"><input type="checkbox" id="comboPilotOnly" onchange="renderCombos()"> <span>Pilot Only</span></label>
           <label class="pilot-toggle" style="background:#FFF5E6;border-color:#FBD38D" title="Show only groups missing a parent or child"><input type="checkbox" id="comboUngroupedOnly" onchange="renderCombos()"> <span>Ungrouped Only</span></label>
           <button class="combo-reset-btn" onclick="resetComboState()" title="Reset all manual grouping changes">↺ Reset</button>
         </div>
@@ -1159,11 +1158,9 @@ function renderCombos() {
   const search = (document.getElementById('comboSearch').value || '').toLowerCase();
   const filterDMC = document.getElementById('comboFilterDMC').value;
   const filterStatus = document.getElementById('comboFilterStatus').value;
-  const pilotOnly = document.getElementById('comboPilotOnly').checked;
   const ungroupedOnly = document.getElementById('comboUngroupedOnly').checked;
 
-  const source = pilotOnly ? comboHistoryData.filter(isPilot) : comboHistoryData;
-  let { groups, unassigned } = buildComboGroups(source);
+  let { groups, unassigned } = buildComboGroups(comboHistoryData);
 
   if (search) groups = groups.filter(g => g.displayName.toLowerCase().includes(search) ||
     [...g.parents,...g.children].some(r => r['Trip: Owner Name'].toLowerCase().includes(search)));
