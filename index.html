@@ -783,6 +783,34 @@ function monthKey(dateStr) {
 }
 
 // ===== DASHBOARD =====
+// ===== REVENUE HELPER =====
+// For each confirmed combo: Parent DMC gets (parent rev - sum of children rev), each child DMC gets its own rev.
+function calcNetRevenueByDmc(data) {
+  const revByDmc = {};
+  const groups = {};
+  data.filter(r => r['Status'] === 'Confirmed').forEach(r => {
+    const ownName = (r['Trip: Client Name'] || '').trim();
+    const parentTripName = (r['Parent Trip'] || r._parentTrip || '').trim();
+    const key = r._role === 'Parent' ? ownName : (parentTripName || ownName);
+    if (!key) return;
+    if (!groups[key]) groups[key] = { parent: null, children: [] };
+    if (r._role === 'Parent') groups[key].parent = r;
+    else groups[key].children.push(r);
+  });
+  Object.values(groups).forEach(g => {
+    if (g.parent) {
+      const childTotal = g.children.reduce((s, c) => s + c._salePrice, 0);
+      const parentShare = g.parent._salePrice - childTotal;
+      const dmc = g.parent._subsidiary;
+      if (dmc) revByDmc[dmc] = (revByDmc[dmc] || 0) + parentShare;
+    }
+    g.children.forEach(c => {
+      if (c._subsidiary) revByDmc[c._subsidiary] = (revByDmc[c._subsidiary] || 0) + c._salePrice;
+    });
+  });
+  return revByDmc;
+}
+
 function renderDashboard() {
   const data = comboHistoryData;
   const totalTrips = data.length;
@@ -863,32 +891,8 @@ function renderDashboard() {
     options: { indexAxis: 'y', responsive: true, plugins: { legend: { display: false } }, scales: { x: { beginAtZero: true, ticks: { stepSize: 1 } } } }
   });
 
-  // Revenue by DMC — net of inter-combo overlap
-  // Each combo: parent DMC gets (parent rev - sum of child revs); each child DMC gets its own rev.
-  // Only confirmed trips counted.
-  const revByDmc = {};
-  // Build combo groups from confirmed trips
-  const comboGroups = {};
-  confirmed.forEach(r => {
-    const ownName = (r['Trip: Client Name'] || '').trim();
-    const parentTripName = (r['Parent Trip'] || r._parentTrip || '').trim();
-    const key = r._role === 'Parent' ? ownName : (parentTripName || ownName);
-    if (!key) return;
-    if (!comboGroups[key]) comboGroups[key] = { parent: null, children: [] };
-    if (r._role === 'Parent') comboGroups[key].parent = r;
-    else comboGroups[key].children.push(r);
-  });
-  Object.values(comboGroups).forEach(g => {
-    if (g.parent) {
-      const childTotal = g.children.reduce((s, c) => s + c._salePrice, 0);
-      const parentShare = g.parent._salePrice - childTotal;
-      const dmc = g.parent._subsidiary;
-      if (dmc) revByDmc[dmc] = (revByDmc[dmc] || 0) + parentShare;
-    }
-    g.children.forEach(c => {
-      if (c._subsidiary) revByDmc[c._subsidiary] = (revByDmc[c._subsidiary] || 0) + c._salePrice;
-    });
-  });
+  // Revenue by DMC — net of inter-combo overlap (uses shared helper)
+  const revByDmc = calcNetRevenueByDmc(data);
   const revLabels = Object.keys(revByDmc).sort();
   destroyChart('chartRevenue');
   chartInstances['chartRevenue'] = new Chart(document.getElementById('chartRevenue'), {
@@ -1168,13 +1172,15 @@ function renderTracker() {
 
 // ===== DMC PERFORMANCE =====
 function renderDMC() {
-  const dmcs = [...new Set(historyData.map(r => r._subsidiary))].filter(Boolean).sort();
+  const data = comboHistoryData;
+  const netRevByDmc = calcNetRevenueByDmc(data);
+  const dmcs = [...new Set(data.map(r => r._subsidiary))].filter(Boolean).sort();
   const dmcStats = dmcs.map(dmc => {
-    const trips = historyData.filter(r => r._subsidiary === dmc);
+    const trips = data.filter(r => r._subsidiary === dmc);
     const parents = trips.filter(r => r._role === 'Parent');
     const children = trips.filter(r => r._role === 'Child');
     const confirmed = trips.filter(r => r['Status'] === 'Confirmed');
-    const rev = confirmed.reduce((s, r) => s + r._salePrice, 0);
+    const rev = netRevByDmc[dmc] || 0;
     return { dmc, total: trips.length, parents: parents.length, children: children.length, confirmed: confirmed.length, lost: trips.filter(r => r['Status'] === 'Lost').length, rev, convRate: trips.length ? (confirmed.length / trips.length * 100).toFixed(1) : 0 };
   });
 
