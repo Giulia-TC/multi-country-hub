@@ -1366,7 +1366,8 @@ function renderRoutes() {
 
 // ===== SLA MONITOR =====
 function renderSLA() {
-  const pilot = pilotData.length ? pilotData : historyData.filter(r => {
+  // "Pilot" = trips from the all-time combo leads sheet created on/after 9 March 2026
+  const pilot = comboHistoryData.filter(r => {
     const d = parseDate(r['Trip: Created Date']);
     return d && d >= new Date(2026, 2, 9);
   });
